@@ -4,13 +4,13 @@
 #include <cmath>
 #include <fstream>
 #include <glad/glad.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <map>
 #include <sstream>
 #include <vector>
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 #if FALSE
 namespace glm {
@@ -512,6 +512,100 @@ public:
         _nextColor = color;
 
         return *this;
+    }
+
+    BufferType &colorVertex(glm::vec4 const &color, glm::vec3 const &position)
+    {
+        _nextColor = color;
+
+        return vertex(position);
+    }
+
+    BufferType &planeTriangleFan()
+    {
+        _drawMode = GL_TRIANGLE_FAN;
+
+        return (*this)
+            .colorVertex(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f), glm::vec3(-0.5f, -0.5f, 0.0f)) // mint
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(-0.5f, 0.5f, 0.0f))  // geel
+            .colorVertex(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.5f, 0.0f))   // paars
+            .colorVertex(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec3(0.5f, -0.5f, 0.0f))  // wit
+            ;
+    }
+
+    BufferType &cubeTriangles()
+    {
+        _drawMode = GL_TRIANGLES;
+
+        return (*this)
+            .colorVertex(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.5f, 0.5f))   // paars
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(-0.5f, 0.5f, 0.5f))  // geel
+            .colorVertex(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f), glm::vec3(-0.5f, -0.5f, 0.5f)) // mint
+
+            .colorVertex(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec3(0.5f, -0.5f, 0.5f))  // wit
+            .colorVertex(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.5f, 0.5f))   // paars
+            .colorVertex(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f), glm::vec3(-0.5f, -0.5f, 0.5f)) // mint
+
+            .colorVertex(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f), glm::vec3(-0.5f, -0.5f, -0.5f)) // mint
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(-0.5f, 0.5f, -0.5f))  // geel
+            .colorVertex(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.5f, -0.5f))   // paars
+
+            .colorVertex(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f), glm::vec3(-0.5f, -0.5f, -0.5f)) // mint
+            .colorVertex(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.5f, -0.5f))   // paars
+            .colorVertex(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec3(0.5f, -0.5f, -0.5f))  // wit
+
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(-0.5f, 0.5f, -0.5f)) // geel
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(-0.5f, 0.5f, 0.5f))  // geel
+            .colorVertex(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.5f, 0.5f))   // paars
+
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(-0.5f, 0.5f, -0.5f)) // geel
+            .colorVertex(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.5f, 0.5f))   // paars
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(0.5f, 0.5f, -0.5f))  // geel
+
+            .colorVertex(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), glm::vec3(0.5f, -0.5f, 0.5f))   // paars
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(-0.5f, -0.5f, 0.5f))  // geel
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(-0.5f, -0.5f, -0.5f)) // geel
+
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(0.5f, -0.5f, -0.5f))  // geel
+            .colorVertex(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), glm::vec3(0.5f, -0.5f, 0.5f))   // paars
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(-0.5f, -0.5f, -0.5f)) // geel
+
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(-0.5f, -0.5f, -0.5f)) // geel
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(-0.5f, -0.5f, 0.5f))  // geel
+            .colorVertex(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), glm::vec3(-0.5f, 0.5f, 0.5f))   // paars
+
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(-0.5f, -0.5f, -0.5f)) // geel
+            .colorVertex(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), glm::vec3(-0.5f, 0.5f, 0.5f))   // paars
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(-0.5f, 0.5f, -0.5f))  // geel
+
+            .colorVertex(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.5f, 0.5f))   // paars
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(0.5f, -0.5f, 0.5f))  // geel
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(0.5f, -0.5f, -0.5f)) // geel
+
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(0.5f, 0.5f, -0.5f))  // geel
+            .colorVertex(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.5f, 0.5f))   // paars
+            .colorVertex(glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec3(0.5f, -0.5f, -0.5f)) // geel
+            ;
+    }
+
+    BufferType &scale(glm::vec3 const &amount)
+    {
+        for (VertexType &v : _verts)
+        {
+            v.pos *= amount;
+        }
+
+        return (*this);
+    }
+
+    BufferType &move(glm::vec3 const &amount)
+    {
+        for (VertexType &v : _verts)
+        {
+            v.pos += amount;
+        }
+
+        return (*this);
     }
 
     bool setup()
