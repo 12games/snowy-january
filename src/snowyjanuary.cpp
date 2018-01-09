@@ -150,7 +150,7 @@ void SnowyJanuary::RenderUi()
     ImGui::Begin("Settings", &show_gui, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings);
     {
         ImGui::SetWindowPos(ImVec2(0, 0));
-        ImGui::SetWindowSize(ImVec2(_width > 700 ? 550 : 275, _height));
+        ImGui::SetWindowSize(ImVec2(_width > 1024 ? 550 : 275, _height));
 
         ImGui::Text("Hello, world!");                            // Some text (you can use a format string too)
         ImGui::SliderFloat("float", &f, 0.0f, 1.0f);             // Edit 1 float as a slider from 0.0f to 1.0f
