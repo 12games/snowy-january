@@ -8,6 +8,9 @@
 
 #include "game.h"
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
+
 #define TICK_INTERVAL 1000 / 120
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768

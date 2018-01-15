@@ -16,6 +16,7 @@ add_executable(snowy-january
     include/KHR/khrplatform.h
     include/game.h
     include/gl-color-position-vertex.h
+    include/tiny_obj_loader.h
     lib/imgui/imgui.cpp
     lib/imgui/imgui.h
     lib/imgui/imgui_draw.cpp
@@ -29,6 +30,8 @@ add_executable(snowy-january
     src/physics.h
     src/physicsobject.cpp
     src/physicsobject.h
+    src/gameobject.cpp
+    src/gameobject.h
     )
 
 target_include_directories(snowy-january
