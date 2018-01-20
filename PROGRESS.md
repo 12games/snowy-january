@@ -1,5 +1,9 @@
 # Progress
 
+## January 20
+![Screenshot 03](progress/screenshot03.png)
+Finally got to the shader with textures. Next step is the masking to merge multiple textures.
+
 ## January 9
 ![Screenshot 02](progress/screenshot02.png)
 Improved my simple BufferType class with methods to generte cube and plane vertices. Further mre there are methods to scale and move the vertices. And last the ImGui styles are altered.
