@@ -439,14 +439,14 @@ public:
 
     void setupAttributes() const
     {
-        auto vertexSize = sizeof(glm::vec3) + sizeof(glm::vec4);
+        auto vertexSize = sizeof(VertexType);
 
         auto vertexAttrib = glGetAttribLocation(_shaderId, _vertexAttributeName.c_str());
-        glVertexAttribPointer(GLuint(vertexAttrib), sizeof(glm::vec3) / sizeof(float), GL_FLOAT, GL_FALSE, vertexSize, 0);
+        glVertexAttribPointer(GLuint(vertexAttrib), sizeof(VertexType::pos) / sizeof(float), GL_FLOAT, GL_FALSE, vertexSize, 0);
         glEnableVertexAttribArray(GLuint(vertexAttrib));
 
         auto colorAttrib = glGetAttribLocation(_shaderId, _colorAttributeName.c_str());
-        glVertexAttribPointer(GLuint(colorAttrib), sizeof(glm::vec4) / sizeof(float), GL_FLOAT, GL_FALSE, vertexSize, reinterpret_cast<const GLvoid *>(sizeof(glm::vec3)));
+        glVertexAttribPointer(GLuint(colorAttrib), sizeof(VertexType::col) / sizeof(float), GL_FLOAT, GL_FALSE, vertexSize, reinterpret_cast<const GLvoid *>(sizeof(VertexType::pos)));
         glEnableVertexAttribArray(GLuint(colorAttrib));
     }
 };

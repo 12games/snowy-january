@@ -2,6 +2,9 @@
 #include <glad/glad.h>
 #include <imgui.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 Game &Game::Instantiate()
 {
     static SnowyJanuary game;
@@ -10,7 +13,7 @@ Game &Game::Instantiate()
 }
 
 SnowyJanuary::SnowyJanuary()
-    : _floor(_shader), _box(_shader)
+    : _floor(_floorShader), _box(_boxShader)
 {
 }
 
@@ -68,8 +71,27 @@ bool SnowyJanuary::Setup()
 
     glClearColor(0.56f, 0.7f, 0.67f, 1.0f);
 
-    // Setting up the shader
-    _shader.compileDefaultShader();
+    int x, y, comp;
+    auto pixels = stbi_load("../01-snowy-january/assets/snow.bmp", &x, &y, &comp, 3);
+    if (pixels != nullptr)
+    {
+        std::cout << "Loading succeeded\n";
+        glGenTextures(1, &_texture);
+
+        glBindTexture(GL_TEXTURE_2D, _texture);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, comp == 4 ? GL_RGBA : GL_RGB, x, y, 0, comp == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, pixels);
+        free(pixels);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    // Setting up the shaders
+    _floorShader.compileDefaultShader();
+    _boxShader.compileDefaultShader();
 
     // Setting up the vertex buffer
     _floor.planeTriangleFan()
@@ -129,17 +151,25 @@ void SnowyJanuary::Render()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear Screen And Depth Buffer
 
     // Select shader
-    _shader.use();
+    _floorShader.use();
 
-    _shader.setupMatrices(_proj, _view, _floorObject->getMatrix());
-    _floor.render();
+    {
+        CapabilityGuard texture2d(GL_TEXTURE_2D, true);
+        glBindTexture(GL_TEXTURE_2D, _texture);
+        _floorShader.setupMatrices(_proj, _view, _floorObject->getMatrix());
+        _floor.render();
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 
     CapabilityGuard cullFace(GL_CULL_FACE, true);
     CapabilityGuard depthTest(GL_DEPTH_TEST, true);
 
-    _shader.setupMatrices(_proj, _view, _boxObject1->getMatrix());
+    // Select shader
+    _boxShader.use();
+
+    _boxShader.setupMatrices(_proj, _view, _boxObject1->getMatrix());
     _box.render();
-    _shader.setupMatrices(_proj, _view, _boxObject2->getMatrix());
+    _boxShader.setupMatrices(_proj, _view, _boxObject2->getMatrix());
     _box.render();
 }
 
