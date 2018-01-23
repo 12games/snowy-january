@@ -13,8 +13,16 @@ public:
     virtual class btRigidBody *getRigidBody() = 0;
 };
 
+class CarObject : public PhysicsObject
+{
+public:
+    virtual void Start() = 0;
+    virtual void Stop() = 0;
+};
+
 class PhysicsObjectBuilder
 {
+    class PhysicsManager &_manager;
     class btCollisionShape* _shape;
     glm::vec3 _initialPos;
     glm::quat _initialRot;
@@ -22,9 +30,10 @@ class PhysicsObjectBuilder
     float _friction;
     float _linearDamping;
     float _angularDamping;
+    glm::vec3 _inputSize;
 
 public:
-    PhysicsObjectBuilder();
+    PhysicsObjectBuilder(class PhysicsManager &manager);
     PhysicsObjectBuilder& Box(glm::vec3 const &size);
     PhysicsObjectBuilder& Sphere(float radius);
     PhysicsObjectBuilder& Cylinder(glm::vec3 const &size);
@@ -39,6 +48,7 @@ public:
     PhysicsObjectBuilder& AngularDamping(float amount);
 
     PhysicsObject* Build();
+    CarObject* BuildCar();
 };
 
 #endif // PHYSICSOBJECT_H

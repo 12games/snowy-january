@@ -8,6 +8,7 @@ using namespace std;
 PhysicsManager::Config PhysicsManager::_config = {9.81f};
 
 PhysicsManager::PhysicsManager()
+    : _drawer(nullptr)
 {
     this->_broadphase = new btDbvtBroadphase();
 
@@ -57,16 +58,16 @@ void PhysicsManager::Step(float gameTime)
         if (contactManifold->getBody0()->getUserPointer() == nullptr) continue;
         if (contactManifold->getBody1()->getUserPointer() == nullptr) continue;
 
-//        auto entityA = static_cast<GameObject *>(contactManifold->getBody0()->getUserPointer());
-//        if (entityA == nullptr) continue;
+        //        auto entityA = static_cast<GameObject *>(contactManifold->getBody0()->getUserPointer());
+        //        if (entityA == nullptr) continue;
 
-//        auto entityB = static_cast<GameObject *>(contactManifold->getBody1()->getUserPointer());
-//        if (entityB == nullptr) continue;
+        //        auto entityB = static_cast<GameObject *>(contactManifold->getBody1()->getUserPointer());
+        //        if (entityB == nullptr) continue;
 
-//        for (auto handler : this->_collisionHandlers)
-//            handler->handleCollision(entityA, entityB);
-//        this->_collisionHandlers->handleCollision(entityA, entityB);
-//        contactManifold->clearManifold();
+        //        for (auto handler : this->_collisionHandlers)
+        //            handler->handleCollision(entityA, entityB);
+        //        this->_collisionHandlers->handleCollision(entityA, entityB);
+        //        contactManifold->clearManifold();
     }
 }
 
@@ -89,86 +90,3 @@ void PhysicsManager::RemoveObject(PhysicsObject *obj)
 
     this->_dynamicsWorld->removeCollisionObject(obj->getRigidBody());
 }
-
-///*
-// * Object
-// */
-//PhysicsObject::PhysicsObject(GameObject *obj, float mass)
-//    : _obj(obj), _shape(0), _rigidBody(0)
-//{
-//    if (obj != 0)
-//    {
-//        glm::quat q = obj->_initialOrientation;
-//        glm::vec3 v = obj->_initialLocation;
-//        this->_transform.setRotation(btQuaternion(q.x, q.y, q.z, q.w));
-//        this->_transform.setOrigin(btVector3(v.x, v.y, v.z));
-
-//        if (obj->_boundingType == GameObject::Box)
-//        {
-//            this->_shape = new btBoxShape(btVector3(obj->_boundingParameters[0], obj->_boundingParameters[1], obj->_boundingParameters[2]));
-//        }
-//        else if (obj->_boundingType == GameObject::Sphere)
-//        {
-//            this->_shape = new btSphereShape(obj->_boundingParameters[0]);
-//        }
-//        else if (obj->_boundingType == GameObject::Cylinder)
-//        {
-//            this->_shape = new btCylinderShape(btVector3(obj->_boundingParameters[0], obj->_boundingParameters[1], obj->_boundingParameters[2]));
-//        }
-//        else if (obj->_boundingType == GameObject::Tree)
-//        {
-//            this->_shape = new btConeShape(obj->_boundingParameters[0], obj->_boundingParameters[1]);
-//        }
-//        else if (obj->_boundingType == GameObject::Character)
-//        {
-//            this->_shape = new btBoxShape(btVector3(2, 2, 2));
-//        }
-//        else if (obj->_boundingType == GameObject::CarType)
-//        {
-//            btTransform localTrans;
-//            localTrans.setIdentity();
-//            localTrans.setOrigin(btVector3(0, obj->_boundingParameters[1] + 0.5f, 0));
-//            btCollisionShape *chassis = new btBoxShape(btVector3(obj->_boundingParameters[0], obj->_boundingParameters[1], obj->_boundingParameters[2]));
-//            btCompoundShape *shape = new btCompoundShape();
-//            shape->addChildShape(localTrans, chassis);
-//            btCollisionShape *shover = new btBoxShape(btVector3(obj->_boundingParameters[0] * 1.5f, obj->_boundingParameters[1], 1.0f));
-//            localTrans.setIdentity();
-//            localTrans.setOrigin(btVector3(0.0f, obj->_boundingParameters[1] + 0.5f, obj->_boundingParameters[2] + 1.0f));
-//            shape->addChildShape(localTrans, shover);
-//            this->_shape = shape;
-//        }
-//        obj->SetPhysics(this);
-
-//        btVector3 localInertia(0, 0, 0);
-//        if (mass != 0.0f)
-//            this->_shape->calculateLocalInertia(mass, localInertia);
-
-//        btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, this, this->_shape, localInertia);
-//        btRigidBody rigidBody ;//= new btRigidBody(rbInfo);
-
-//        // Lage friction betekend veel weerstand, dus neemt de snelheid snel af.
-//        this->_rigidBody->setFriction(0.1f);
-//        rigidBody.setDamping(0.9f, 0.9f);
-//        this->_rigidBody->setUserPointer(obj);
-//    }
-//}
-
-//PhysicsObject::~PhysicsObject()
-//{}
-
-//glm::vec3 PhysicsObject::position() const
-//{
-//    return glm::vec3(this->_transform.getOrigin().x(),
-//                     this->_transform.getOrigin().y(),
-//                     this->_transform.getOrigin().z());
-//}
-
-//void PhysicsObject::getWorldTransform(btTransform &worldTrans) const
-//{
-//    worldTrans = this->_transform;
-//}
-
-//void PhysicsObject::setWorldTransform(const btTransform &worldTrans)
-//{
-//    this->_transform = worldTrans;
-//}

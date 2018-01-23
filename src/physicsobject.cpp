@@ -1,8 +1,10 @@
 #include "physicsobject.h"
+#include "physics.h"
+
 #include <btBulletCollisionCommon.h>
 #include <btBulletDynamicsCommon.h>
-#include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 class ImplPhysicsObject : public btMotionState, public PhysicsObject
 {
@@ -37,7 +39,39 @@ btRigidBody *ImplPhysicsObject::getRigidBody()
     return _rigidBody;
 }
 
-PhysicsObjectBuilder::PhysicsObjectBuilder()
+class CarPhysicsObject : public CarObject, public ImplPhysicsObject
+{
+public:
+    btRaycastVehicle *_vehicle;
+    btDefaultVehicleRaycaster *_vehicleRayCaster;
+
+    virtual void Start();
+    virtual void Stop();
+
+    virtual glm::mat4 const &getMatrix() const;
+    virtual class btRigidBody *getRigidBody();
+};
+
+void CarPhysicsObject::Start()
+{
+}
+
+void CarPhysicsObject::Stop()
+{
+}
+
+glm::mat4 const &CarPhysicsObject::getMatrix() const
+{
+    return ImplPhysicsObject::getMatrix();
+}
+
+btRigidBody *CarPhysicsObject::getRigidBody()
+{
+    return ImplPhysicsObject::getRigidBody();
+}
+
+PhysicsObjectBuilder::PhysicsObjectBuilder(PhysicsManager &manager)
+    : _manager(manager)
 {
     _shape = nullptr;
     _initialPos = glm::vec3(0.0f);
@@ -72,8 +106,94 @@ PhysicsObject *PhysicsObjectBuilder::Build()
     return obj;
 }
 
+void addWheels(
+    btVector3 const &halfExtents,
+    btRaycastVehicle *vehicle,
+    btRaycastVehicle::btVehicleTuning tuning)
+{
+    //The direction of the raycast, the btRaycastVehicle uses raycasts instead of simiulating the wheels with rigid bodies
+    btVector3 wheelDirectionCS0(0, -1, 0);
+
+    //The axis which the wheel rotates arround
+    btVector3 wheelAxleCS(-1, 0, 0);
+
+    btScalar suspensionRestLength(0.6);
+
+    btScalar wheelWidth(0.6f);
+
+    btScalar wheelRadius(0.5f);
+
+    btScalar connectionHeight(.2f);
+
+    //All the wheel configuration assumes the vehicle is centered at the origin and a right handed coordinate system is used
+    btVector3 wheelConnectionPoint(halfExtents.x() - wheelRadius, connectionHeight, halfExtents.z() - wheelWidth);
+
+    //Adds the front wheels to the btRaycastVehicle by shifting the connection point
+    vehicle->addWheel(wheelConnectionPoint, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, true);
+    btVector3 p2(wheelConnectionPoint);
+    vehicle->addWheel(wheelConnectionPoint * btVector3(-1, 1, 1), wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, true);
+    btVector3 p3(wheelConnectionPoint * btVector3(-1, 1, 1));
+    //Adds the rear wheels, notice that the last parameter value is false
+    vehicle->addWheel(wheelConnectionPoint * btVector3(1, 1, -1), wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, false);
+    btVector3 p4(wheelConnectionPoint * btVector3(1, 1, -1));
+    vehicle->addWheel(wheelConnectionPoint * btVector3(-1, 1, -1), wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, false);
+    btVector3 p5(wheelConnectionPoint * btVector3(-1, 1, -1));
+    //Configures each wheel of our vehicle, setting its friction, damping compression, etc.
+    for (int i = 0; i < vehicle->getNumWheels(); i++)
+    {
+        btWheelInfo &wheel = vehicle->getWheelInfo(i);
+        wheel.m_suspensionStiffness = 50;
+        wheel.m_wheelsDampingRelaxation = 1;
+        wheel.m_wheelsDampingCompression = 0.8f;
+        wheel.m_frictionSlip = 0.8f;
+        wheel.m_rollInfluence = 1;
+    }
+}
+
+CarObject *PhysicsObjectBuilder::BuildCar()
+{
+    if (_shape == nullptr)
+    {
+        return nullptr;
+    }
+
+    btVector3 localInertia(0, 0, 0);
+    if (_mass != 0.0f)
+    {
+        _shape->calculateLocalInertia(_mass, localInertia);
+    }
+
+    auto obj = new CarPhysicsObject();
+    obj->_matrix = glm::translate(glm::mat4(1.0f), _initialPos);
+
+    auto rbInfo = btRigidBody::btRigidBodyConstructionInfo(_mass, obj, _shape, localInertia);
+    obj->_rigidBody = new btRigidBody(rbInfo);
+    obj->_rigidBody->setActivationState(DISABLE_DEACTIVATION);
+
+    float wheelRadius = 0.5f;
+    float wheelWidth = 0.4f;
+    float connectionHeight = 1.2f;
+    btVector3 wheelDir(0, -1, 0);
+    btVector3 wheelAxle(-1, 0, 0);
+    btScalar suspensionRestLength(0.6f);
+    btRaycastVehicle::btVehicleTuning _tuning;
+
+    obj->_vehicleRayCaster = new btDefaultVehicleRaycaster(_manager._dynamicsWorld);
+    obj->_vehicle = new btRaycastVehicle(_tuning, reinterpret_cast<btRigidBody *>(obj->_rigidBody), obj->_vehicleRayCaster);
+
+    // TODO Move this to the AddObject() function of PhycsManager?
+    _manager._dynamicsWorld->addVehicle(obj->_vehicle);
+
+    obj->_vehicle->setCoordinateSystem(0, 1, 2);
+
+    addWheels(btVector3(_inputSize.x / 2.0f, _inputSize.y / 2.0f, _inputSize.z / 2.0f), obj->_vehicle, _tuning);
+
+    return obj;
+}
+
 PhysicsObjectBuilder &PhysicsObjectBuilder::Box(glm::vec3 const &size)
 {
+    _inputSize = size;
     this->_shape = new btBoxShape(btVector3(size.x / 2.0f, size.y / 2.0f, size.z / 2.0f));
 
     return (*this);
@@ -88,6 +208,7 @@ PhysicsObjectBuilder &PhysicsObjectBuilder::Sphere(float radius)
 
 PhysicsObjectBuilder &PhysicsObjectBuilder::Cylinder(glm::vec3 const &size)
 {
+    _inputSize = size;
     this->_shape = new btCylinderShape(btVector3(size.x / 2.0f, size.y / 2.0f, size.z / 2.0f));
 
     return (*this);

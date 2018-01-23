@@ -28,12 +28,18 @@ class ShaderType
     GLuint _projectionUniformId;
     GLuint _viewUniformId;
     GLuint _modelUniformId;
-    GLuint _textureUniformId;
+    GLuint _textureUniform1Id;
+    GLuint _textureUniform2Id;
+    GLuint _textureUniform3Id;
+    GLuint _textureUniformMaskId;
 
     std::string _projectionUniformName;
     std::string _viewUniformName;
     std::string _modelUniformName;
-    std::string _textureUniformName;
+    std::string _textureUniform1Name;
+    std::string _textureUniform2Name;
+    std::string _textureUniform3Name;
+    std::string _textureUniformMaskName;
 
     std::string _vertexAttributeName;
     std::string _colorAttributeName;
@@ -43,7 +49,7 @@ public:
     ShaderType()
         : _shaderId(0), _projectionUniformId(0), _viewUniformId(0), _modelUniformId(0),
           _projectionUniformName("u_projection"), _viewUniformName("u_view"), _modelUniformName("u_model"),
-          _textureUniformName("u_texture"),
+          _textureUniform1Name("u_texture1"), _textureUniform2Name("u_texture2"), _textureUniform3Name("u_texture3"), _textureUniformMaskName("u_mask"),
           _vertexAttributeName("vertex"), _colorAttributeName("color"), _uvsAttributeName("uvs")
     {}
 
@@ -96,13 +102,16 @@ public:
                 "{"
                 "    gl_Position = u_projection * u_view * u_model * vec4(vertex.xyz, 1.0);"
                 "    f_color = color;"
-                "    f_uvs = uvs;"
+                "    f_uvs = vec4(uvs.st, vertex.x > 0 ? 1.0f : 0.0f, vertex.y > 0 ? 1.0f : 0.0f);"
                 "}");
 
             std::string const fshader(
                 "#version 150\n"
 
-                "uniform sampler2D u_texture;"
+                "uniform sampler2D u_texture1;"
+                "uniform sampler2D u_texture2;"
+                "uniform sampler2D u_texture3;"
+                "uniform sampler2D u_mask;"
 
                 "in vec4 f_color;"
                 "in vec4 f_uvs;"
@@ -110,7 +119,12 @@ public:
 
                 "void main()"
                 "{"
-                "   color = texture(u_texture, f_uvs.st);"
+                "   vec4 mask = texture(u_mask, f_uvs.zw);"
+                "   vec4 color1 = (texture(u_texture1, f_uvs.st) * mask.x)"
+                "               + (texture(u_texture2, f_uvs.st) * (1.0 - mask.x));"
+                "   vec4 color2 = (color1 * mask.y)"
+                "               + (texture(u_texture3, f_uvs.st) * (1.0 - mask.y));"
+                "   color = color2;"
                 "}");
 
             if (compile(vshader, fshader))
@@ -191,8 +205,10 @@ public:
         _viewUniformId = glGetUniformLocation(_shaderId, _viewUniformName.c_str());
         _modelUniformId = glGetUniformLocation(_shaderId, _modelUniformName.c_str());
 
-        _textureUniformId = glGetUniformLocation(_shaderId, _textureUniformName.c_str());
-        glUniform1i(_textureUniformId, 0);
+        _textureUniform1Id = glGetUniformLocation(_shaderId, _textureUniform1Name.c_str());
+        _textureUniform2Id = glGetUniformLocation(_shaderId, _textureUniform2Name.c_str());
+        _textureUniform3Id = glGetUniformLocation(_shaderId, _textureUniform3Name.c_str());
+        _textureUniformMaskId = glGetUniformLocation(_shaderId, _textureUniformMaskName.c_str());
 
         return true;
     }
@@ -212,6 +228,25 @@ public:
 
         glUniformMatrix4fv(_projectionUniformId, 1, false, glm::value_ptr(projectionView));
         glUniformMatrix4fv(_modelUniformId, 1, false, glm::value_ptr(model));
+    }
+
+    void setupTextures(unsigned int texture0, unsigned int texture1, unsigned int texture2, unsigned int mask) const
+    {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture0);
+        glUniform1i(_textureUniform1Id, 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, texture1);
+        glUniform1i(_textureUniform2Id, 1);
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, texture2);
+        glUniform1i(_textureUniform3Id, 2);
+
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, mask);
+        glUniform1i(_textureUniformMaskId, 3);
     }
 
     void setupAttributes() const
@@ -282,8 +317,7 @@ public:
     {
         _verts.push_back(VertexType({position,
                                      _nextColor,
-                                     _nextUvs
-                                    }));
+                                     _nextUvs}));
 
         _vertexCount = _verts.size();
 
@@ -319,15 +353,17 @@ public:
         return vertex(position);
     }
 
-    BufferType &planeTriangleFan()
+    BufferType &planeTriangleFan(glm::vec2 const &size, glm::vec2 const &textureSize)
     {
         _drawMode = GL_TRIANGLE_FAN;
 
+        auto uvAspect = glm::vec2(size.x / textureSize.x, size.y / textureSize.y);
+
         return (*this)
-            .colorUvsVertex(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f), glm::vec3(-0.5f, -0.5f, 0.0f)) // mint
-            .colorUvsVertex(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec3(-0.5f, 0.5f, 0.0f))  // geel
-            .colorUvsVertex(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.0f, 0.0f), glm::vec3(0.5f, 0.5f, 0.0f))   // paars
-            .colorUvsVertex(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.5f, -0.5f, 0.0f))  // wit
+            .colorUvsVertex(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f), glm::vec3(size.x * -0.5f, size.y * -0.5f, 0.0f))           // mint
+            .colorUvsVertex(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec4(0.0f, uvAspect.y, 0.0f, 0.0f), glm::vec3(size.x * -0.5f, size.y * 0.5f, 0.0f))      // geel
+            .colorUvsVertex(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec4(uvAspect.x, uvAspect.y, 0.0f, 0.0f), glm::vec3(size.x * 0.5f, size.y * 0.5f, 0.0f)) // paars
+            .colorUvsVertex(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec4(uvAspect.x, 0.0f, 0.0f, 0.0f), glm::vec3(size.x * 0.5f, size.y * -0.5f, 0.0f))      // wit
             ;
     }
 

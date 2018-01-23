@@ -29,6 +29,7 @@ add_executable(snowy-january
     src/imgui_impl_sdl_gl3.cpp
     src/imgui_impl_sdl_gl3.h
     src/physics.cpp
+    src/physics_debug.cpp
     src/physics.h
     src/physicsobject.cpp
     src/physicsobject.h

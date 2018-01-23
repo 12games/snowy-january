@@ -15,27 +15,9 @@
 
 #include "physicsobject.h"
 
-//class Trigger;
-
-//class PhysicsObject : public btMotionState
-//{
-//public:
-//    PhysicsObject(class GameObject* obj, float mass);
-//    virtual ~PhysicsObject();
-
-//    glm::vec3 position() const;
-
-//	virtual void getWorldTransform(btTransform& worldTrans) const;
-//	virtual void setWorldTransform(const btTransform& worldTrans);
-
-//    class GameObject* _obj;
-//    btCollisionShape* _shape;
-//    btTransform _transform;
-//    btRigidBody* _rigidBody;
-//};
-
 class PhysicsManager
 {
+    friend class PhysicsObjectBuilder;
 private:
     btBroadphaseInterface *_broadphase;
     btDefaultCollisionConfiguration *_collisionConfiguration;
@@ -49,9 +31,14 @@ private:
 
     } _config;
 
+    class DebugDrawer *_drawer;
+
 public:
     PhysicsManager();
     virtual ~PhysicsManager();
+
+    void InitDebugDraw();
+    void DebugDraw(glm::mat4 const &proj, glm::mat4 const &view);
 
     void Step(float gameTime);
 

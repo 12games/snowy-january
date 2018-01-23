@@ -56,8 +56,41 @@ public:
     }
 };
 
+unsigned int SnowyJanuary::uploadTexture(std::string const &filename)
+{
+    unsigned int texture = 0;
+
+    int x, y, comp;
+    auto pixels = stbi_load(filename.c_str(), &x, &y, &comp, 3);
+    if (pixels != nullptr)
+    {
+        glGenTextures(1, &texture);
+
+        glBindTexture(GL_TEXTURE_2D, texture);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, comp == 4 ? GL_RGBA : GL_RGB, x, y, 0, comp == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, pixels);
+        free(pixels);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    return texture;
+}
+
 bool SnowyJanuary::Setup()
 {
+    glActiveTexture(GL_TEXTURE0);
+    _snowTexture = uploadTexture("../01-snowy-january/assets/snow.bmp");
+    glActiveTexture(GL_TEXTURE1);
+    _grassTexture = uploadTexture("../01-snowy-january/assets/grass.bmp");
+    glActiveTexture(GL_TEXTURE3);
+    _asphaltTexture = uploadTexture("../01-snowy-january/assets/asphalt.bmp");
+    glActiveTexture(GL_TEXTURE2);
+    _maskTexture = uploadTexture("../01-snowy-january/assets/level.png");
+
     ImGuiIO &io = ImGui::GetIO();
     ImFont *font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\tahoma.ttf", 18.0f, NULL);
 
@@ -71,34 +104,15 @@ bool SnowyJanuary::Setup()
 
     glClearColor(0.56f, 0.7f, 0.67f, 1.0f);
 
-    int x, y, comp;
-    auto pixels = stbi_load("../01-snowy-january/assets/snow.bmp", &x, &y, &comp, 3);
-    if (pixels != nullptr)
-    {
-        std::cout << "Loading succeeded\n";
-        glGenTextures(1, &_texture);
-
-        glBindTexture(GL_TEXTURE_2D, _texture);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, comp == 4 ? GL_RGBA : GL_RGB, x, y, 0, comp == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, pixels);
-        free(pixels);
-
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-
     // Setting up the shaders
     _floorShader.compileDefaultShader();
     _boxShader.compileDefaultShader();
 
     // Setting up the vertex buffer
-    _floor.planeTriangleFan()
-        .scale((glm::vec3(20.0f)))
+    _floor.planeTriangleFan(glm::vec2(20.0f), glm::vec2(5.12f))
         .setup();
 
-    _floorObject = PhysicsObjectBuilder()
+    _floorObject = PhysicsObjectBuilder(_physics)
                        .Box(glm::vec3(20.0f, 20.0f, 0.1f))
                        .Mass(0.0f)
                        .Build();
@@ -106,22 +120,24 @@ bool SnowyJanuary::Setup()
 
     _box.cubeTriangles()
         .scale(glm::vec3(2.0f))
-            .fillColor(glm::vec4(0.0f, 0.3f, 0.5f, 1.0f))
+        .fillColor(glm::vec4(0.0f, 0.3f, 0.5f, 1.0f))
         .setup();
 
-    _boxObject1 = PhysicsObjectBuilder()
+    _boxObject1 = PhysicsObjectBuilder(_physics)
                       .Box(glm::vec3(2.0f))
                       .Mass(1.0f)
                       .InitialPosition(glm::vec3(0.0f, 0.0f, 10.0f))
                       .Build();
     _physics.AddObject(_boxObject1);
 
-    _boxObject2 = PhysicsObjectBuilder()
+    _boxObject2 = PhysicsObjectBuilder(_physics)
                       .Box(glm::vec3(2.0f))
                       .Mass(1.0f)
                       .InitialPosition(glm::vec3(0.0f, -1.2f, 15.0f))
                       .Build();
     _physics.AddObject(_boxObject2);
+
+    _physics.InitDebugDraw();
 
     return true;
 }
@@ -155,10 +171,10 @@ void SnowyJanuary::Render()
 
     {
         CapabilityGuard texture2d(GL_TEXTURE_2D, true);
-        glBindTexture(GL_TEXTURE_2D, _texture);
+
         _floorShader.setupMatrices(_proj, _view, _floorObject->getMatrix());
+        _floorShader.setupTextures(_grassTexture, _asphaltTexture, _snowTexture, _maskTexture);
         _floor.render();
-        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     CapabilityGuard cullFace(GL_CULL_FACE, true);
@@ -171,6 +187,8 @@ void SnowyJanuary::Render()
     _box.render();
     _boxShader.setupMatrices(_proj, _view, _boxObject2->getMatrix());
     _box.render();
+
+    _physics.DebugDraw(_proj, _view);
 }
 
 void SnowyJanuary::RenderUi()

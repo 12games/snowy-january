@@ -16,12 +16,16 @@ class SnowyJanuary : public Game
     ShaderType _boxShader;
     BufferType _box;
 
-    unsigned int _texture;
+    unsigned int _snowTexture;
+    unsigned int _grassTexture;
+    unsigned int _asphaltTexture;
+    unsigned int _maskTexture;
     PhysicsManager _physics;
     PhysicsObject* _floorObject;
     PhysicsObject* _boxObject1;
     PhysicsObject* _boxObject2;
 
+    unsigned int uploadTexture(std::string const &filename);
 public:
     SnowyJanuary();
 
