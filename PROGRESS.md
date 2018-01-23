@@ -1,5 +1,9 @@
 # Progress
 
+## January 23
+![Screenshot 05](progress/screenshot05.png)
+Added car code for the physics. Also added the debug drawer for bullet to make the shapes really visible.
+
 ## January 21
 ![Screenshot 04](progress/screenshot04.png)
 Masking is done now. There are three textures needed. First a texture for grass, second a texture for road, third a textures for snow and fourth a mask texture. The first two textures are merged based on the R values of the mask. The result of this merge will be merged with the snow textures based on the G values of the mask. This will be the end result. The first three textures have a fixed size and are repeated over the plane. The mask textures is fully fit over the triangles of the plane.
