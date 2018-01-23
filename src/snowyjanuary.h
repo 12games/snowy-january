@@ -15,17 +15,20 @@ class SnowyJanuary : public Game
     MaskedTexturesBuffer::BufferType _floor;
     ShaderType _boxShader;
     BufferType _box;
+    BufferType _car;
 
     unsigned int _snowTexture;
     unsigned int _grassTexture;
     unsigned int _asphaltTexture;
     unsigned int _maskTexture;
     PhysicsManager _physics;
-    PhysicsObject* _floorObject;
-    PhysicsObject* _boxObject1;
-    PhysicsObject* _boxObject2;
+    PhysicsObject *_floorObject;
+    PhysicsObject *_boxObject1;
+    PhysicsObject *_boxObject2;
+    CarObject *_carObject;
 
     unsigned int uploadTexture(std::string const &filename);
+
 public:
     SnowyJanuary();
 

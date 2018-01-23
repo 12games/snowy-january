@@ -45,12 +45,22 @@ public:
     btRaycastVehicle *_vehicle;
     btDefaultVehicleRaycaster *_vehicleRayCaster;
 
+    virtual void Update();
     virtual void Start();
     virtual void Stop();
 
     virtual glm::mat4 const &getMatrix() const;
     virtual class btRigidBody *getRigidBody();
 };
+
+void CarPhysicsObject::Update()
+{
+    _vehicle->applyEngineForce(100.0f, 2);
+    _vehicle->applyEngineForce(100.0f, 0);
+
+    _vehicle->setSteeringValue(-0.21f, 1);
+    _vehicle->setSteeringValue(-0.21f, 3);
+}
 
 void CarPhysicsObject::Start()
 {
@@ -112,10 +122,10 @@ void addWheels(
     btRaycastVehicle::btVehicleTuning tuning)
 {
     //The direction of the raycast, the btRaycastVehicle uses raycasts instead of simiulating the wheels with rigid bodies
-    btVector3 wheelDirectionCS0(0, -1, 0);
+    btVector3 wheelDirectionCS0(0, 0, -1);
 
     //The axis which the wheel rotates arround
-    btVector3 wheelAxleCS(-1, 0, 0);
+    btVector3 wheelAxleCS(0, 1, 0);
 
     btScalar suspensionRestLength(0.6);
 
@@ -126,18 +136,21 @@ void addWheels(
     btScalar connectionHeight(.2f);
 
     //All the wheel configuration assumes the vehicle is centered at the origin and a right handed coordinate system is used
-    btVector3 wheelConnectionPoint(halfExtents.x() - wheelRadius, connectionHeight, halfExtents.z() - wheelWidth);
+    btVector3 wheelConnectionPoint(halfExtents.x() - wheelRadius, halfExtents.z() - wheelWidth, connectionHeight);
 
     //Adds the front wheels to the btRaycastVehicle by shifting the connection point
-    vehicle->addWheel(wheelConnectionPoint, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, true);
-    btVector3 p2(wheelConnectionPoint);
+    vehicle->addWheel(wheelConnectionPoint * btVector3(1, 1, 1), wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, true);
     vehicle->addWheel(wheelConnectionPoint * btVector3(-1, 1, 1), wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, true);
-    btVector3 p3(wheelConnectionPoint * btVector3(-1, 1, 1));
+
     //Adds the rear wheels, notice that the last parameter value is false
-    vehicle->addWheel(wheelConnectionPoint * btVector3(1, 1, -1), wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, false);
-    btVector3 p4(wheelConnectionPoint * btVector3(1, 1, -1));
-    vehicle->addWheel(wheelConnectionPoint * btVector3(-1, 1, -1), wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, false);
-    btVector3 p5(wheelConnectionPoint * btVector3(-1, 1, -1));
+    vehicle->addWheel(wheelConnectionPoint * btVector3(1, -1, 1), wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, false);
+    vehicle->addWheel(wheelConnectionPoint * btVector3(-1, -1, 1), wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, false);
+
+    btVector3 p2(wheelConnectionPoint);
+    btVector3 p3(wheelConnectionPoint * btVector3(-1, 1, 1));
+    btVector3 p4(wheelConnectionPoint * btVector3(1, -1, 1));
+    btVector3 p5(wheelConnectionPoint * btVector3(-1, -1, 1));
+
     //Configures each wheel of our vehicle, setting its friction, damping compression, etc.
     for (int i = 0; i < vehicle->getNumWheels(); i++)
     {
@@ -186,7 +199,7 @@ CarObject *PhysicsObjectBuilder::BuildCar()
 
     obj->_vehicle->setCoordinateSystem(0, 1, 2);
 
-    addWheels(btVector3(_inputSize.x / 2.0f, _inputSize.y / 2.0f, _inputSize.z / 2.0f), obj->_vehicle, _tuning);
+    addWheels(btVector3(_inputSize.x, _inputSize.y, _inputSize.z), obj->_vehicle, _tuning);
 
     return obj;
 }

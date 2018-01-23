@@ -27,7 +27,7 @@ public:
 };
 
 DebugDrawer::DebugDrawer()
-    : _buffer(_shader)
+    : _buffer(_shader), _debugMode(btIDebugDraw::DBG_DrawWireframe + btIDebugDraw::DBG_DrawConstraints + btIDebugDraw::DBG_DrawNormals)
 {
     _buffer.setDrawMode(GL_LINES);
 }
@@ -71,8 +71,8 @@ void PhysicsManager::InitDebugDraw()
     {
         _drawer = new DebugDrawer();
         _drawer->init();
-        _dynamicsWorld->setDebugDrawer(_drawer);
     }
+    _dynamicsWorld->setDebugDrawer(_drawer);
 }
 
 void PhysicsManager::DebugDraw(glm::mat4 const &proj, glm::mat4 const &view)

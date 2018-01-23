@@ -13,7 +13,7 @@ Game &Game::Instantiate()
 }
 
 SnowyJanuary::SnowyJanuary()
-    : _floor(_floorShader), _box(_boxShader)
+    : _floor(_floorShader), _box(_boxShader), _car(_boxShader)
 {
 }
 
@@ -137,6 +137,18 @@ bool SnowyJanuary::Setup()
                       .Build();
     _physics.AddObject(_boxObject2);
 
+    _car.cubeTriangles()
+        .scale(glm::vec3(2.0f, 1.0f, 1.0f))
+        .fillColor(glm::vec4(0.0f, 0.3f, 0.5f, 1.0f))
+        .setup();
+
+    _carObject = PhysicsObjectBuilder(_physics)
+                      .Box(glm::vec3(2.0f, 1.0f, 1.0f))
+                      .Mass(1000.0f)
+                      .InitialPosition(glm::vec3(8.0f, -1.2f, 2.0f))
+                      .BuildCar();
+    _physics.AddObject(_carObject);
+
     _physics.InitDebugDraw();
 
     return true;
@@ -154,6 +166,7 @@ void SnowyJanuary::Resize(int width, int height)
 
 void SnowyJanuary::Update(int dt)
 {
+    _carObject->Update();
     _physics.Step(dt / 1000.0f);
 }
 
@@ -177,17 +190,22 @@ void SnowyJanuary::Render()
         _floor.render();
     }
 
-    CapabilityGuard cullFace(GL_CULL_FACE, true);
-    CapabilityGuard depthTest(GL_DEPTH_TEST, true);
+    {
+        CapabilityGuard cullFace(GL_CULL_FACE, true);
+        CapabilityGuard depthTest(GL_DEPTH_TEST, true);
 
-    // Select shader
-    _boxShader.use();
+        // Select shader
+        _boxShader.use();
 
-    _boxShader.setupMatrices(_proj, _view, _boxObject1->getMatrix());
-    _box.render();
-    _boxShader.setupMatrices(_proj, _view, _boxObject2->getMatrix());
-    _box.render();
+        _boxShader.setupMatrices(_proj, _view, _boxObject1->getMatrix());
+        _box.render();
+        _boxShader.setupMatrices(_proj, _view, _boxObject2->getMatrix());
+        _box.render();
 
+        _boxShader.setupMatrices(_proj, _view, _carObject->getMatrix());
+        _car.render();
+    }
+    CapabilityGuard depthTest(GL_DEPTH_TEST, false);
     _physics.DebugDraw(_proj, _view);
 }
 
