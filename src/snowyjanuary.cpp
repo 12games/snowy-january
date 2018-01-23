@@ -138,12 +138,12 @@ bool SnowyJanuary::Setup()
     _physics.AddObject(_boxObject2);
 
     _car.cubeTriangles()
-        .scale(glm::vec3(2.0f, 1.0f, 1.0f))
+        .scale(glm::vec3(1.0f, 2.0f, 1.0f))
         .fillColor(glm::vec4(0.0f, 0.3f, 0.5f, 1.0f))
         .setup();
 
     _carObject = PhysicsObjectBuilder(_physics)
-                      .Box(glm::vec3(2.0f, 1.0f, 1.0f))
+                      .Box(glm::vec3(1.0f, 2.0f, 1.0f))
                       .Mass(1000.0f)
                       .InitialPosition(glm::vec3(8.0f, -1.2f, 2.0f))
                       .BuildCar();

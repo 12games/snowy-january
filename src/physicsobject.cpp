@@ -55,10 +55,10 @@ public:
 
 void CarPhysicsObject::Update()
 {
-    _vehicle->applyEngineForce(100.0f, 2);
+    _vehicle->applyEngineForce(100.0f, 1);
     _vehicle->applyEngineForce(100.0f, 0);
 
-    _vehicle->setSteeringValue(-0.21f, 1);
+    _vehicle->setSteeringValue(-0.21f, 2);
     _vehicle->setSteeringValue(-0.21f, 3);
 }
 
@@ -125,7 +125,7 @@ void addWheels(
     btVector3 wheelDirectionCS0(0, 0, -1);
 
     //The axis which the wheel rotates arround
-    btVector3 wheelAxleCS(0, 1, 0);
+    btVector3 wheelAxleCS(1, 0, 0);
 
     btScalar suspensionRestLength(0.6);
 
