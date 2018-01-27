@@ -12,11 +12,6 @@ Game &Game::Instantiate()
     return game;
 }
 
-SnowyJanuary::SnowyJanuary()
-    : _floor(_floorShader), _box(_boxShader), _car(_boxShader)
-{
-}
-
 class CapabilityGuard
 {
     GLenum _cap;
@@ -56,26 +51,117 @@ public:
     }
 };
 
+UpdatingTexture::UpdatingTexture()
+    : _pixels(nullptr)
+{
+}
+
+unsigned int UpdatingTexture::textureId() const
+{
+    return _textureId;
+}
+
+void UpdatingTexture::loadTexture(std::string const &filename)
+{
+    int x, y;
+    _pixels = stbi_load(filename.c_str(), &x, &y, &_comp, 3);
+    if (_pixels == nullptr)
+    {
+        return;
+    }
+
+    _textureSize = glm::vec2(x, y);
+
+    glGenTextures(1, &_textureId);
+
+    glBindTexture(GL_TEXTURE_2D, _textureId);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, _comp == 4 ? GL_RGBA : GL_RGB, _textureSize.x, _textureSize.y, 0, _comp == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, _pixels);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void UpdatingTexture::setPlaneSize(glm::vec2 const &planeSize)
+{
+    _planeSize = planeSize;
+}
+
+void UpdatingTexture::paintPixel(glm::vec2 const &at, std::vector<unsigned char> const &color)
+{
+    if (at.x < 0 || at.x > _textureSize.x)
+    {
+        return;
+    }
+    if (at.y < 0 || at.y > _textureSize.y)
+    {
+        return;
+    }
+
+    auto pixelOffset = int((at.y * _textureSize.x) + at.x) * _comp;
+
+    for (int i = 0; i < color.size(); i++)
+    {
+        _pixels[pixelOffset + i] = color[i];
+    }
+}
+
+void UpdatingTexture::paintOn(glm::vec2 const &pos, glm::vec2 const &dir)
+{
+    if (_pixels == nullptr)
+    {
+        return;
+    }
+
+    auto localPos = pos;// + (pos * 0.5f);
+
+    if (localPos.x < 0.0f || localPos.x >= _textureSize.x)
+    {
+        return;
+    }
+
+    if (localPos.y < 0.0f || localPos.y >= _textureSize.y)
+    {
+        return;
+    }
+
+    paintPixel(localPos, std::vector<unsigned char>({ 0, 255, 0, 0}));
+
+    glTexImage2D(GL_TEXTURE_2D, 0, _comp == 4 ? GL_RGBA : GL_RGB, _textureSize.x, _textureSize.y, 0, _comp == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, _pixels);
+}
+
+
+
+
+SnowyJanuary::SnowyJanuary()
+    : _floor(_floorShader), _box(_boxShader), _car(_boxShader)
+{
+}
+
 unsigned int SnowyJanuary::uploadTexture(std::string const &filename)
 {
-    unsigned int texture = 0;
-
     int x, y, comp;
     auto pixels = stbi_load(filename.c_str(), &x, &y, &comp, 3);
-    if (pixels != nullptr)
+    if (pixels == nullptr)
     {
-        glGenTextures(1, &texture);
-
-        glBindTexture(GL_TEXTURE_2D, texture);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, comp == 4 ? GL_RGBA : GL_RGB, x, y, 0, comp == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, pixels);
-        free(pixels);
-
-        glBindTexture(GL_TEXTURE_2D, 0);
+        return 0;
     }
+
+    unsigned int texture = 0;
+
+    glGenTextures(1, &texture);
+
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, comp == 4 ? GL_RGBA : GL_RGB, x, y, 0, comp == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    free(pixels);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     return texture;
 }
@@ -89,7 +175,8 @@ bool SnowyJanuary::Setup()
     glActiveTexture(GL_TEXTURE3);
     _asphaltTexture = uploadTexture("../01-snowy-january/assets/asphalt.bmp");
     glActiveTexture(GL_TEXTURE2);
-    _maskTexture = uploadTexture("../01-snowy-january/assets/level.png");
+    _maskTexture.loadTexture("../01-snowy-january/assets/level.png");
+    _maskTexture.setPlaneSize(glm::vec2(20.0f, 20.0f));
 
     ImGuiIO &io = ImGui::GetIO();
     ImFont *font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\tahoma.ttf", 18.0f, NULL);
@@ -126,14 +213,14 @@ bool SnowyJanuary::Setup()
     _boxObject1 = PhysicsObjectBuilder(_physics)
                       .Box(glm::vec3(2.0f))
                       .Mass(1.0f)
-                      .InitialPosition(glm::vec3(0.0f, 0.0f, 10.0f))
+                      .InitialPosition(glm::vec3(8.0f, 2.2f, 2.0f))
                       .Build();
     _physics.AddObject(_boxObject1);
 
     _boxObject2 = PhysicsObjectBuilder(_physics)
                       .Box(glm::vec3(2.0f))
                       .Mass(1.0f)
-                      .InitialPosition(glm::vec3(0.0f, -1.2f, 15.0f))
+                      .InitialPosition(glm::vec3(8.0f, -1.2f, 2.0f))
                       .Build();
     _physics.AddObject(_boxObject2);
 
@@ -143,10 +230,10 @@ bool SnowyJanuary::Setup()
         .setup();
 
     _carObject = PhysicsObjectBuilder(_physics)
-                      .Box(glm::vec3(1.0f, 2.0f, 1.0f))
-                      .Mass(1000.0f)
-                      .InitialPosition(glm::vec3(8.0f, -1.2f, 2.0f))
-                      .BuildCar();
+                     .Box(glm::vec3(1.0f, 2.0f, 1.0f))
+                     .Mass(1000.0f)
+                     .InitialPosition(glm::vec3(0.0f, 0.0f, 2.0f))
+                     .BuildCar();
     _physics.AddObject(_carObject);
 
     _physics.InitDebugDraw();
@@ -164,8 +251,16 @@ void SnowyJanuary::Resize(int width, int height)
     _view = glm::lookAt(_pos + glm::vec3(12.0f), _pos, glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
+static int px = 0;
+static int py = 502;
+
 void SnowyJanuary::Update(int dt)
 {
+    auto mat = _carObject->getMatrix();
+    px = int((mat[3].x + 10.0f)*(51.20f/2.0f));
+    py = int((mat[3].y + 10.0f)*(51.20f/2.0f));
+
+    _maskTexture.paintOn(glm::vec2(px, py), glm::vec2(1.0f, 0.0f));
     _carObject->Update();
     _physics.Step(dt / 1000.0f);
 }
@@ -186,7 +281,7 @@ void SnowyJanuary::Render()
         CapabilityGuard texture2d(GL_TEXTURE_2D, true);
 
         _floorShader.setupMatrices(_proj, _view, _floorObject->getMatrix());
-        _floorShader.setupTextures(_grassTexture, _asphaltTexture, _snowTexture, _maskTexture);
+        _floorShader.setupTextures(_grassTexture, _asphaltTexture, _snowTexture, _maskTexture.textureId());
         _floor.render();
     }
 
@@ -220,7 +315,8 @@ void SnowyJanuary::RenderUi()
         ImGui::SetWindowSize(ImVec2(_width > 1024 ? 550 : 275, _height));
 
         ImGui::Text("Hello, world!");                            // Some text (you can use a format string too)
-        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);             // Edit 1 float as a slider from 0.0f to 1.0f
+        ImGui::SliderInt("x", &(px), 0, 512.0f);
+        ImGui::SliderInt("y", &(py), 0, 512.0f);
         ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats as a color
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 

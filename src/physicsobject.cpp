@@ -55,11 +55,11 @@ public:
 
 void CarPhysicsObject::Update()
 {
-    _vehicle->applyEngineForce(100.0f, 1);
-    _vehicle->applyEngineForce(100.0f, 0);
+    _vehicle->applyEngineForce(100.0f, 3);
+    _vehicle->applyEngineForce(100.0f, 2);
 
-    _vehicle->setSteeringValue(-0.21f, 2);
-    _vehicle->setSteeringValue(-0.21f, 3);
+    _vehicle->setSteeringValue(0.3f, 1);
+    _vehicle->setSteeringValue(0.3f, 0);
 }
 
 void CarPhysicsObject::Start()

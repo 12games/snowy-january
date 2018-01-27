@@ -12,6 +12,8 @@ find_package(OPENGL REQUIRED)
 find_package(GLM REQUIRED)
 
 add_executable(snowy-january
+    README.md
+    PROGRESS.md
     include/glad/glad.h
     include/KHR/khrplatform.h
     include/game.h

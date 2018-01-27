@@ -6,6 +6,26 @@
 #include "gl-masked-textures.h"
 #include "physics.h"
 
+class UpdatingTexture
+{
+    unsigned int _textureId;
+    int _comp;
+    glm::vec2 _planeSize;
+    unsigned char *_pixels;
+
+    void paintPixel(glm::vec2 const &at, std::vector<unsigned char> const &color);
+public:
+    UpdatingTexture();
+
+    glm::vec2 _textureSize;
+    unsigned int textureId() const;
+
+    void loadTexture(std::string const &filename);
+    void setPlaneSize(glm::vec2 const &planeSize);
+
+    void paintOn(glm::vec2 const &pos, glm::vec2 const &dir);
+};
+
 class SnowyJanuary : public Game
 {
     glm::mat4 _proj, _view;
@@ -20,7 +40,8 @@ class SnowyJanuary : public Game
     unsigned int _snowTexture;
     unsigned int _grassTexture;
     unsigned int _asphaltTexture;
-    unsigned int _maskTexture;
+    UpdatingTexture _maskTexture;
+
     PhysicsManager _physics;
     PhysicsObject *_floorObject;
     PhysicsObject *_boxObject1;

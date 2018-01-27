@@ -124,7 +124,7 @@ public:
                 "               + (texture(u_texture2, f_uvs.st) * (1.0 - mask.x));"
                 "   vec4 color2 = (color1 * mask.y)"
                 "               + (texture(u_texture3, f_uvs.st) * (1.0 - mask.y));"
-                "   color = color2;"
+                "   color = mask;"
                 "}");
 
             if (compile(vshader, fshader))

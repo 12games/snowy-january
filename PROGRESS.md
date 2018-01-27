@@ -1,5 +1,9 @@
 # Progress
 
+## January 27
+![Screenshot 06](progress/screenshot06.png)
+Got the mask painting from car position working, makes some good are:P
+
 ## January 23
 ![Screenshot 05](progress/screenshot05.png)
 Added car code for the physics. Also added the debug drawer for bullet to make the shapes really visible.
