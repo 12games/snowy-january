@@ -108,26 +108,74 @@ void UpdatingTexture::paintPixel(glm::vec2 const &at, std::vector<unsigned char>
     }
 }
 
-void UpdatingTexture::paintOn(glm::vec2 const &pos, glm::vec2 const &dir)
+void UpdatingTexture::paintLine(glm::vec2 const &from, glm::vec2 const &to, std::vector<unsigned char> const &color)
+{
+    float x1 = from.x;
+    float y1 = from.y;
+    float x2 = to.x;
+    float y2 = to.y;
+    {
+            // Bresenham's line algorithm
+      const bool steep = (fabs(y2 - y1) > fabs(x2 - x1));
+      if(steep)
+      {
+        std::swap(x1, y1);
+        std::swap(x2, y2);
+      }
+
+      if(x1 > x2)
+      {
+        std::swap(x1, x2);
+        std::swap(y1, y2);
+      }
+
+      const float dx = x2 - x1;
+      const float dy = fabs(y2 - y1);
+
+      float error = dx / 2.0f;
+      const int ystep = (y1 < y2) ? 1 : -1;
+      int y = (int)y1;
+
+      const int maxX = (int)x2;
+
+      for(int x=(int)x1; x<maxX; x++)
+      {
+        if(steep)
+        {
+            paintPixel(glm::vec2(y,x), color);
+        }
+        else
+        {
+            paintPixel(glm::vec2(x,y), color);
+        }
+
+        error -= dy;
+        if(error < 0)
+        {
+            y += ystep;
+            error += dx;
+        }
+      }
+    }
+}
+
+void UpdatingTexture::paintOn(glm::vec2 const &pos, glm::mat4 const &modelMatrix)
 {
     if (_pixels == nullptr)
     {
         return;
     }
 
-    auto localPos = pos;// + (pos * 0.5f);
+    glm::vec2 dir = glm::vec2(modelMatrix[1].x, modelMatrix[1].y);
+    glm::vec2 right = glm::vec2(modelMatrix[0].x, modelMatrix[0].y);
 
-    if (localPos.x < 0.0f || localPos.x >= _textureSize.x)
-    {
-        return;
-    }
-
-    if (localPos.y < 0.0f || localPos.y >= _textureSize.y)
-    {
-        return;
-    }
-
-    paintPixel(localPos, std::vector<unsigned char>({ 0, 255, 0, 0}));
+    // three lines to make sure the most pixels are painted over even when the car is moving fast or making  sharp turn
+    auto localPos = pos + (dir * 30.0f);
+    paintLine(localPos + (right * 20.0f), localPos + (right * -20.0f), std::vector<unsigned char>({ 0, 255, 0, 0}));
+    localPos = pos + (dir * 29.0f);
+    paintLine(localPos + (right * 20.0f), localPos + (right * -20.0f), std::vector<unsigned char>({ 0, 255, 0, 0}));
+    localPos = pos + (dir * 28.0f);
+    paintLine(localPos + (right * 20.0f), localPos + (right * -20.0f), std::vector<unsigned char>({ 0, 255, 0, 0}));
 
     glTexImage2D(GL_TEXTURE_2D, 0, _comp == 4 ? GL_RGBA : GL_RGB, _textureSize.x, _textureSize.y, 0, _comp == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, _pixels);
 }
@@ -175,7 +223,7 @@ bool SnowyJanuary::Setup()
     glActiveTexture(GL_TEXTURE3);
     _asphaltTexture = uploadTexture("../01-snowy-january/assets/asphalt.bmp");
     glActiveTexture(GL_TEXTURE2);
-    _maskTexture.loadTexture("../01-snowy-january/assets/level.png");
+    _maskTexture.loadTexture("../01-snowy-january/assets/level-clear.png");
     _maskTexture.setPlaneSize(glm::vec2(20.0f, 20.0f));
 
     ImGuiIO &io = ImGui::GetIO();
@@ -257,10 +305,10 @@ static int py = 502;
 void SnowyJanuary::Update(int dt)
 {
     auto mat = _carObject->getMatrix();
-    px = int((mat[3].x + 10.0f)*(51.20f/2.0f));
-    py = int((mat[3].y + 10.0f)*(51.20f/2.0f));
+    px = int((mat[3].x + 10.0f)*25.6f);
+    py = int((mat[3].y + 10.0f)*25.6f);
 
-    _maskTexture.paintOn(glm::vec2(px, py), glm::vec2(1.0f, 0.0f));
+    _maskTexture.paintOn(glm::vec2(px, py), mat);
     _carObject->Update();
     _physics.Step(dt / 1000.0f);
 }

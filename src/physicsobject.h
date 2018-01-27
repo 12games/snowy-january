@@ -17,8 +17,10 @@ class CarObject : public PhysicsObject
 {
 public:
     virtual void Update() = 0;
-    virtual void Start() = 0;
-    virtual void Stop() = 0;
+    virtual void StartEngine() = 0;
+    virtual void ChangeSpeed(float amount) = 0;
+    virtual void Steer(float amount) = 0;
+    virtual void StopEngine() = 0;
 };
 
 class PhysicsObjectBuilder

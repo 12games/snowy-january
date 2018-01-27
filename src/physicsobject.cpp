@@ -41,33 +41,106 @@ btRigidBody *ImplPhysicsObject::getRigidBody()
 
 class CarPhysicsObject : public CarObject, public ImplPhysicsObject
 {
+    const float MIN_SPEED = 0.0f;
+    const float MAX_SPEED = 100.0f;
+    const float MIN_STEER = -0.3f;
+    const float MAX_STEER = 0.3f;
+
+    bool _engineStarted;
+    float _speed;
+    float _steering;
 public:
+    CarPhysicsObject();
+
     btRaycastVehicle *_vehicle;
     btDefaultVehicleRaycaster *_vehicleRayCaster;
 
     virtual void Update();
-    virtual void Start();
-    virtual void Stop();
+    virtual void StartEngine();
+    virtual void ChangeSpeed(float amount);
+    virtual void Steer(float amount);
+    virtual void StopEngine();
 
     virtual glm::mat4 const &getMatrix() const;
     virtual class btRigidBody *getRigidBody();
 };
 
+CarPhysicsObject::CarPhysicsObject()
+    : _engineStarted(false), _speed(0.0f), _steering(0.0f)
+{
+}
+
 void CarPhysicsObject::Update()
 {
-    _vehicle->applyEngineForce(100.0f, 3);
-    _vehicle->applyEngineForce(100.0f, 2);
+    if (!_engineStarted)
+    {
+        return;
+    }
 
-    _vehicle->setSteeringValue(0.3f, 1);
-    _vehicle->setSteeringValue(0.3f, 0);
+    _vehicle->applyEngineForce(_speed, 3);
+    _vehicle->applyEngineForce(_speed, 2);
+
+    _vehicle->setSteeringValue(_steering, 1);
+    _vehicle->setSteeringValue(_steering, 0);
 }
 
-void CarPhysicsObject::Start()
+void CarPhysicsObject::StartEngine()
 {
+    if (!_engineStarted)
+    {
+        // todo play sound of starting engine
+        //      and update UI
+    }
+
+    _engineStarted = true;
 }
 
-void CarPhysicsObject::Stop()
+void CarPhysicsObject::ChangeSpeed(float amount)
 {
+    if (!_engineStarted)
+    {
+        return;
+    }
+
+    _speed += amount;
+    if (_speed > MAX_SPEED)
+    {
+        _speed = MAX_SPEED;
+    }
+    else if (_speed < MIN_SPEED)
+    {
+        _speed = MIN_SPEED;
+    }
+}
+
+void CarPhysicsObject::Steer(float amount)
+{
+    if (!_engineStarted)
+    {
+        return;
+    }
+
+    _steering += amount;
+    if (_steering > MAX_STEER)
+    {
+        _steering = MAX_STEER;
+    }
+    else if (_steering < MIN_STEER)
+    {
+        _steering = MIN_STEER;
+    }
+}
+
+void CarPhysicsObject::StopEngine()
+{
+    if (_engineStarted)
+    {
+        // todo play sound of stopping engine
+        //      and update UI
+    }
+
+    _engineStarted = false;
+    _speed = MIN_SPEED;
 }
 
 glm::mat4 const &CarPhysicsObject::getMatrix() const

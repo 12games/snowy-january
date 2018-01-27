@@ -14,6 +14,7 @@ class UpdatingTexture
     unsigned char *_pixels;
 
     void paintPixel(glm::vec2 const &at, std::vector<unsigned char> const &color);
+    void paintLine(glm::vec2 const &from, glm::vec2 const &to, std::vector<unsigned char> const &color);
 public:
     UpdatingTexture();
 
@@ -23,7 +24,7 @@ public:
     void loadTexture(std::string const &filename);
     void setPlaneSize(glm::vec2 const &planeSize);
 
-    void paintOn(glm::vec2 const &pos, glm::vec2 const &dir);
+    void paintOn(glm::vec2 const &pos, glm::mat4 const &modelMatrix);
 };
 
 class SnowyJanuary : public Game
