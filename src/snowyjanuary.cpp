@@ -2,12 +2,18 @@
 #include <glad/glad.h>
 #include <imgui.h>
 
+#define SYSTEM_IO_FILEINFO_IMPLEMENTATION
+#include <system.io.fileinfo.h>
+#include <system.io.path.h>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-Game &Game::Instantiate()
+#define KEYMAP_FILE "snowyjanuary.keymap"
+
+Game &Game::Instantiate(int argc, char *argv[])
 {
-    static SnowyJanuary game;
+    static SnowyJanuary game(argc, argv);
 
     return game;
 }
@@ -115,77 +121,81 @@ void UpdatingTexture::paintLine(glm::vec2 const &from, glm::vec2 const &to, std:
     float x2 = to.x;
     float y2 = to.y;
     {
-            // Bresenham's line algorithm
-      const bool steep = (fabs(y2 - y1) > fabs(x2 - x1));
-      if(steep)
-      {
-        std::swap(x1, y1);
-        std::swap(x2, y2);
-      }
-
-      if(x1 > x2)
-      {
-        std::swap(x1, x2);
-        std::swap(y1, y2);
-      }
-
-      const float dx = x2 - x1;
-      const float dy = fabs(y2 - y1);
-
-      float error = dx / 2.0f;
-      const int ystep = (y1 < y2) ? 1 : -1;
-      int y = (int)y1;
-
-      const int maxX = (int)x2;
-
-      for(int x=(int)x1; x<maxX; x++)
-      {
-        if(steep)
+        // Bresenham's line algorithm
+        const bool steep = (fabs(y2 - y1) > fabs(x2 - x1));
+        if (steep)
         {
-            paintPixel(glm::vec2(y,x), color);
-        }
-        else
-        {
-            paintPixel(glm::vec2(x,y), color);
+            std::swap(x1, y1);
+            std::swap(x2, y2);
         }
 
-        error -= dy;
-        if(error < 0)
+        if (x1 > x2)
         {
-            y += ystep;
-            error += dx;
+            std::swap(x1, x2);
+            std::swap(y1, y2);
         }
-      }
+
+        const float dx = x2 - x1;
+        const float dy = fabs(y2 - y1);
+
+        float error = dx / 2.0f;
+        const int ystep = (y1 < y2) ? 1 : -1;
+        int y = (int)y1;
+
+        const int maxX = (int)x2;
+
+        for (int x = (int)x1; x < maxX; x++)
+        {
+            if (steep)
+            {
+                paintPixel(glm::vec2(y, x), color);
+            }
+            else
+            {
+                paintPixel(glm::vec2(x, y), color);
+            }
+
+            error -= dy;
+            if (error < 0)
+            {
+                y += ystep;
+                error += dx;
+            }
+        }
     }
 }
 
-void UpdatingTexture::paintOn(glm::vec2 const &pos, glm::mat4 const &modelMatrix)
+void UpdatingTexture::paintOn(glm::mat4 const &modelMatrix)
 {
     if (_pixels == nullptr)
     {
         return;
     }
 
+    // Calculate the position in texture-space
+    glm::vec2 pos(
+        int((modelMatrix[3].x + (_planeSize.x / 2.0f)) * (_textureSize.x / 20.0f)),
+        int((modelMatrix[3].y + (_planeSize.x / 2.0f)) * (_textureSize.y / 20.0f)));
+
     glm::vec2 dir = glm::vec2(modelMatrix[1].x, modelMatrix[1].y);
     glm::vec2 right = glm::vec2(modelMatrix[0].x, modelMatrix[0].y);
 
     // three lines to make sure the most pixels are painted over even when the car is moving fast or making  sharp turn
     auto localPos = pos + (dir * 30.0f);
-    paintLine(localPos + (right * 20.0f), localPos + (right * -20.0f), std::vector<unsigned char>({ 0, 255, 0, 0}));
+    paintLine(localPos + (right * 20.0f), localPos + (right * -20.0f), std::vector<unsigned char>({0, 255, 0, 0}));
     localPos = pos + (dir * 29.0f);
-    paintLine(localPos + (right * 20.0f), localPos + (right * -20.0f), std::vector<unsigned char>({ 0, 255, 0, 0}));
+    paintLine(localPos + (right * 20.0f), localPos + (right * -20.0f), std::vector<unsigned char>({0, 255, 0, 0}));
     localPos = pos + (dir * 28.0f);
-    paintLine(localPos + (right * 20.0f), localPos + (right * -20.0f), std::vector<unsigned char>({ 0, 255, 0, 0}));
+    paintLine(localPos + (right * 20.0f), localPos + (right * -20.0f), std::vector<unsigned char>({0, 255, 0, 0}));
 
     glTexImage2D(GL_TEXTURE_2D, 0, _comp == 4 ? GL_RGBA : GL_RGB, _textureSize.x, _textureSize.y, 0, _comp == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, _pixels);
 }
 
-
-
-
-SnowyJanuary::SnowyJanuary()
+SnowyJanuary::SnowyJanuary(int argc, char *argv[])
     : _floor(_floorShader), _box(_boxShader), _car(_boxShader)
 {
+    System::IO::FileInfo exe(argv[0]);
+    _settingsDir = exe.Directory().FullName();
 }
 
 unsigned int SnowyJanuary::uploadTexture(std::string const &filename)
@@ -216,6 +226,8 @@ unsigned int SnowyJanuary::uploadTexture(std::string const &filename)
 
 bool SnowyJanuary::Setup()
 {
+    _userInput.ReadKeyMappings(System::IO::Path::Combine(_settingsDir, KEYMAP_FILE));
+
     glActiveTexture(GL_TEXTURE0);
     _snowTexture = uploadTexture("../01-snowy-january/assets/snow.bmp");
     glActiveTexture(GL_TEXTURE1);
@@ -299,16 +311,45 @@ void SnowyJanuary::Resize(int width, int height)
     _view = glm::lookAt(_pos + glm::vec3(12.0f), _pos, glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
-static int px = 0;
-static int py = 502;
-
 void SnowyJanuary::Update(int dt)
 {
-    auto mat = _carObject->getMatrix();
-    px = int((mat[3].x + 10.0f)*25.6f);
-    py = int((mat[3].y + 10.0f)*25.6f);
+    if (_menuMode != MenuModes::NoMenu)
+    {
+        return;
+    }
 
-    _maskTexture.paintOn(glm::vec2(px, py), mat);
+    _maskTexture.paintOn(_carObject->getMatrix());
+
+    _pos = glm::vec3(_carObject->getMatrix()[3].x, _carObject->getMatrix()[3].y, 0.0f);
+    _view = glm::lookAt(_pos + glm::vec3(12.0f), _pos, glm::vec3(0.0f, 0.0f, 1.0f));
+
+    if (_userInput.ActionState(UserInputActions::StartEngine))
+    {
+        _carObject->StartEngine();
+    }
+    else if (_userInput.ActionState(UserInputActions::StopEngine))
+    {
+        _carObject->StopEngine();
+    }
+
+    if (_userInput.ActionState(UserInputActions::SpeedUp))
+    {
+        _carObject->ChangeSpeed(1.0f);
+    }
+    else if (_userInput.ActionState(UserInputActions::SpeedDown))
+    {
+        _carObject->ChangeSpeed(-1.0f);
+    }
+
+    if (_userInput.ActionState(UserInputActions::SteerLeft))
+    {
+        _carObject->Steer(0.01f);
+    }
+    else if (_userInput.ActionState(UserInputActions::SteerRight))
+    {
+        _carObject->Steer(-0.01f);
+    }
+
     _carObject->Update();
     _physics.Step(dt / 1000.0f);
 }
@@ -354,25 +395,94 @@ void SnowyJanuary::Render()
 
 void SnowyJanuary::RenderUi()
 {
-    static float f = 0.0f;
     static bool show_gui = true;
 
-    ImGui::Begin("Settings", &show_gui, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings);
+    if (_menuMode == MenuModes::NoMenu)
     {
-        ImGui::SetWindowPos(ImVec2(0, 0));
-        ImGui::SetWindowSize(ImVec2(_width > 1024 ? 550 : 275, _height));
+        ImGui::Begin("Settings", &show_gui, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings);
+        {
+            ImGui::SetWindowPos(ImVec2(0, 0));
+            ImGui::SetWindowSize(ImVec2(160, 64));
+            if (ImGui::Button("Pause", ImVec2(120, 36)))
+            {
+                _menuMode = MenuModes::MainMenu;
+            }
+            ImGui::End();
+        }
+        return;
+    }
+    else
+    {
+        ImGui::Begin("Settings", &show_gui, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings);
+        {
+            ImGui::SetWindowPos(ImVec2(0, 0));
+            ImGui::SetWindowSize(ImVec2(_width > 1024 ? 512 : 275, _height));
 
-        ImGui::Text("Hello, world!");                            // Some text (you can use a format string too)
-        ImGui::SliderInt("x", &(px), 0, 512.0f);
-        ImGui::SliderInt("y", &(py), 0, 512.0f);
-        ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats as a color
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+            if (_menuMode == MenuModes::MainMenu)
+            {
+                ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
 
-        ImGui::Button("Go", ImVec2(88, 36));
-        ImGui::End();
+                if (ImGui::Button("Play!", ImVec2(120, 36)))
+                {
+                    _menuMode = MenuModes::NoMenu;
+                }
+                if (ImGui::Button("Change keys", ImVec2(120, 36)))
+                {
+                    _menuMode = MenuModes::KeyMappingMenu;
+                }
+            }
+            if (_menuMode == MenuModes::KeyMappingMenu)
+            {
+                if (ImGui::Button("Back", ImVec2(120, 36)))
+                {
+                    _menuMode = MenuModes::MainMenu;
+                    _userInput.WriteKeyMappings(System::IO::Path::Combine(_settingsDir, KEYMAP_FILE));
+                }
+                ImGui::Columns(2);
+                ImGui::SetColumnWidth(0, 140);
+
+                ImGui::Text("Action");
+                ImGui::NextColumn();
+                ImGui::Text("Bound keys");
+                ImGui::NextColumn();
+
+                ImGui::Separator();
+
+                for (int i = 0; i < int(UserInputActions::Count); ++i)
+                {
+                    if (ImGui::Button(UserInputActionNames[i], ImVec2(120, 36)))
+                    {
+                        _userInput.StartMappingAction((UserInputActions)i);
+                    }
+                    ImGui::NextColumn();
+
+                    auto mappedEvents = _userInput.GetMappedActionEvents((UserInputActions)i);
+                    bool first = true;
+                    for (auto e : mappedEvents)
+                    {
+                        if (!first)
+                        {
+                            ImGui::Text("or");
+                            ImGui::SameLine();
+                        }
+                        ImGui::Text(e.toString());
+                        ImGui::SameLine();
+                        first = false;
+                    }
+                    if (mappedEvents.size() == 0)
+                    {
+                        ImGui::Text("<unbound>");
+                    }
+                    ImGui::NextColumn();
+                }
+            }
+
+            ImGui::End();
+        }
     }
 }
 
 void SnowyJanuary::Destroy()
 {
 }
+

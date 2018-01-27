@@ -24,6 +24,7 @@ add_executable(snowy-january
     lib/imgui/imgui.cpp
     lib/imgui/imgui.h
     lib/imgui/imgui_draw.cpp
+    src/game.cpp
     src/program.cpp
     src/glad.c
     src/snowyjanuary.cpp
@@ -45,6 +46,7 @@ target_include_directories(snowy-january
     PRIVATE ${GLM_INCLUDE_DIRS}
     PRIVATE include
     PRIVATE lib/imgui
+    PRIVATE lib/system.io/include
     )
 
 target_link_libraries(snowy-january

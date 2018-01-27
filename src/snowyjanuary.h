@@ -6,6 +6,8 @@
 #include "gl-masked-textures.h"
 #include "physics.h"
 
+#include <string>
+
 class UpdatingTexture
 {
     unsigned int _textureId;
@@ -24,13 +26,23 @@ public:
     void loadTexture(std::string const &filename);
     void setPlaneSize(glm::vec2 const &planeSize);
 
-    void paintOn(glm::vec2 const &pos, glm::mat4 const &modelMatrix);
+    void paintOn(glm::mat4 const &modelMatrix);
+};
+
+enum class MenuModes
+{
+    NoMenu,
+    MainMenu,
+    KeyMappingMenu,
 };
 
 class SnowyJanuary : public Game
 {
     glm::mat4 _proj, _view;
     glm::vec3 _pos;
+
+    std::string _settingsDir;
+    MenuModes _menuMode;
 
     MaskedTexturesBuffer::ShaderType _floorShader;
     MaskedTexturesBuffer::BufferType _floor;
@@ -52,7 +64,7 @@ class SnowyJanuary : public Game
     unsigned int uploadTexture(std::string const &filename);
 
 public:
-    SnowyJanuary();
+    SnowyJanuary(int argc, char *argv[]);
 
     virtual bool Setup();
     virtual void Resize(int width, int height);
