@@ -415,13 +415,12 @@ void SnowyJanuary::RenderUi()
     {
         ImGui::Begin("Settings", &show_gui, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings);
         {
+            float panelWidth = _width > 1024 ? 512 : 275;
             ImGui::SetWindowPos(ImVec2(0, 0));
-            ImGui::SetWindowSize(ImVec2(_width > 1024 ? 512 : 275, _height));
+            ImGui::SetWindowSize(ImVec2(panelWidth, _height));
 
             if (_menuMode == MenuModes::MainMenu)
             {
-                ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
-
                 if (ImGui::Button("Play!", ImVec2(120, 36)))
                 {
                     _menuMode = MenuModes::NoMenu;
@@ -430,6 +429,8 @@ void SnowyJanuary::RenderUi()
                 {
                     _menuMode = MenuModes::KeyMappingMenu;
                 }
+
+                ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
             }
             if (_menuMode == MenuModes::KeyMappingMenu)
             {

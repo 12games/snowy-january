@@ -1,8 +1,11 @@
 # Progress
 
 ## January 27
+![Screenshot 07](progress/screenshot07.png)
+Controlling the car is now done by the keyboard, with mapped keys saved and loaded from/to disk.
+
 ![Screenshot 06](progress/screenshot06.png)
-Got the mask painting from car position working, makes some good are:P
+Got the mask painting from car position working, makes some good art:P
 
 ## January 23
 ![Screenshot 05](progress/screenshot05.png)
