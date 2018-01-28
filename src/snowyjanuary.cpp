@@ -1,4 +1,5 @@
 #include "snowyjanuary.h"
+#include <capabilityguard.h>
 #include <glad/glad.h>
 #include <imgui.h>
 
@@ -16,179 +17,6 @@ Game &Game::Instantiate(int argc, char *argv[])
     static SnowyJanuary game(argc, argv);
 
     return game;
-}
-
-class CapabilityGuard
-{
-    GLenum _cap;
-    short _prevValue;
-
-public:
-    CapabilityGuard(GLenum cap, bool enable)
-        : _cap(cap)
-    {
-        _prevValue = glIsEnabled(cap) ? 1 : 0;
-        if (enable != (_prevValue == 1))
-        {
-            if (enable)
-            {
-                glEnable(_cap);
-            }
-            else
-            {
-                glDisable(_cap);
-            }
-        }
-        else
-        {
-            _prevValue = -1;
-        }
-    }
-    virtual ~CapabilityGuard()
-    {
-        if (_prevValue == 1)
-        {
-            glEnable(_cap);
-        }
-        else if (_prevValue == 0)
-        {
-            glDisable(_cap);
-        }
-    }
-};
-
-UpdatingTexture::UpdatingTexture()
-    : _pixels(nullptr)
-{
-}
-
-unsigned int UpdatingTexture::textureId() const
-{
-    return _textureId;
-}
-
-void UpdatingTexture::loadTexture(std::string const &filename)
-{
-    int x, y;
-    _pixels = stbi_load(filename.c_str(), &x, &y, &_comp, 3);
-    if (_pixels == nullptr)
-    {
-        return;
-    }
-
-    _textureSize = glm::vec2(x, y);
-
-    glGenTextures(1, &_textureId);
-
-    glBindTexture(GL_TEXTURE_2D, _textureId);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, _comp == 4 ? GL_RGBA : GL_RGB, _textureSize.x, _textureSize.y, 0, _comp == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, _pixels);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-void UpdatingTexture::setPlaneSize(glm::vec2 const &planeSize)
-{
-    _planeSize = planeSize;
-}
-
-void UpdatingTexture::paintPixel(glm::vec2 const &at, std::vector<unsigned char> const &color)
-{
-    if (at.x < 0 || at.x > _textureSize.x)
-    {
-        return;
-    }
-    if (at.y < 0 || at.y > _textureSize.y)
-    {
-        return;
-    }
-
-    auto pixelOffset = int((at.y * _textureSize.x) + at.x) * _comp;
-
-    for (int i = 0; i < color.size(); i++)
-    {
-        _pixels[pixelOffset + i] = color[i];
-    }
-}
-
-void UpdatingTexture::paintLine(glm::vec2 const &from, glm::vec2 const &to, std::vector<unsigned char> const &color)
-{
-    float x1 = from.x;
-    float y1 = from.y;
-    float x2 = to.x;
-    float y2 = to.y;
-    {
-        // Bresenham's line algorithm
-        const bool steep = (fabs(y2 - y1) > fabs(x2 - x1));
-        if (steep)
-        {
-            std::swap(x1, y1);
-            std::swap(x2, y2);
-        }
-
-        if (x1 > x2)
-        {
-            std::swap(x1, x2);
-            std::swap(y1, y2);
-        }
-
-        const float dx = x2 - x1;
-        const float dy = fabs(y2 - y1);
-
-        float error = dx / 2.0f;
-        const int ystep = (y1 < y2) ? 1 : -1;
-        int y = (int)y1;
-
-        const int maxX = (int)x2;
-
-        for (int x = (int)x1; x < maxX; x++)
-        {
-            if (steep)
-            {
-                paintPixel(glm::vec2(y, x), color);
-            }
-            else
-            {
-                paintPixel(glm::vec2(x, y), color);
-            }
-
-            error -= dy;
-            if (error < 0)
-            {
-                y += ystep;
-                error += dx;
-            }
-        }
-    }
-}
-
-void UpdatingTexture::paintOn(glm::mat4 const &modelMatrix)
-{
-    if (_pixels == nullptr)
-    {
-        return;
-    }
-
-    // Calculate the position in texture-space
-    glm::vec2 pos(
-        int((modelMatrix[3].x + (_planeSize.x / 2.0f)) * (_textureSize.x / 20.0f)),
-        int((modelMatrix[3].y + (_planeSize.x / 2.0f)) * (_textureSize.y / 20.0f)));
-
-    glm::vec2 dir = glm::vec2(modelMatrix[1].x, modelMatrix[1].y);
-    glm::vec2 right = glm::vec2(modelMatrix[0].x, modelMatrix[0].y);
-
-    // three lines to make sure the most pixels are painted over even when the car is moving fast or making  sharp turn
-    auto localPos = pos + (dir * 30.0f);
-    paintLine(localPos + (right * 20.0f), localPos + (right * -20.0f), std::vector<unsigned char>({0, 255, 0, 0}));
-    localPos = pos + (dir * 29.0f);
-    paintLine(localPos + (right * 20.0f), localPos + (right * -20.0f), std::vector<unsigned char>({0, 255, 0, 0}));
-    localPos = pos + (dir * 28.0f);
-    paintLine(localPos + (right * 20.0f), localPos + (right * -20.0f), std::vector<unsigned char>({0, 255, 0, 0}));
-
-    glTexImage2D(GL_TEXTURE_2D, 0, _comp == 4 ? GL_RGBA : GL_RGB, _textureSize.x, _textureSize.y, 0, _comp == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, _pixels);
 }
 
 SnowyJanuary::SnowyJanuary(int argc, char *argv[])
@@ -235,7 +63,7 @@ bool SnowyJanuary::Setup()
     glActiveTexture(GL_TEXTURE3);
     _asphaltTexture = uploadTexture("../01-snowy-january/assets/asphalt.bmp");
     glActiveTexture(GL_TEXTURE2);
-    _maskTexture.loadTexture("../01-snowy-january/assets/level-clear.png");
+    _maskTexture.loadTexture("../01-snowy-january/assets/level.png");
     _maskTexture.setPlaneSize(glm::vec2(20.0f, 20.0f));
 
     ImGuiIO &io = ImGui::GetIO();
@@ -273,7 +101,7 @@ bool SnowyJanuary::Setup()
     _boxObject1 = PhysicsObjectBuilder(_physics)
                       .Box(glm::vec3(2.0f))
                       .Mass(1.0f)
-                      .InitialPosition(glm::vec3(8.0f, 2.2f, 2.0f))
+                      .InitialPosition(glm::vec3(5.0f, 2.2f, 5.0f))
                       .Build();
     _physics.AddObject(_boxObject1);
 
@@ -295,6 +123,30 @@ bool SnowyJanuary::Setup()
                      .InitialPosition(glm::vec3(0.0f, 0.0f, 2.0f))
                      .BuildCar();
     _physics.AddObject(_carObject);
+
+    //    auto obj = PhysicsObjectBuilder(_physics)
+    //                   .Cone(1.0f, 4.0f)
+    //                   .Mass(0.0f)
+    //                   .InitialPosition(glm::vec3(5.0f, 2.2f, 5.0f))
+    //                   .InitialRotation(glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f)))
+    //                   .Build();
+    //    _physics.AddObject(obj);
+
+    auto bluePixels = _maskTexture.listBluePixels();
+
+    auto builder = PhysicsObjectBuilder(_physics)
+                       .Cone(1.0f, 4.0f)
+                       .Mass(0.0f)
+                       .InitialRotation(glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f)));
+
+    for (auto pos : bluePixels)
+    {
+        auto obj = builder
+                       .InitialPosition(glm::vec3(pos.x, 2.2f, pos.y))
+                       .Build();
+        _physics.AddObject(obj);
+        _treeObjects.push_back(obj);
+    }
 
     _physics.InitDebugDraw();
 
@@ -318,7 +170,10 @@ void SnowyJanuary::Update(int dt)
         return;
     }
 
-    _maskTexture.paintOn(_carObject->getMatrix());
+    if (_carObject->Speed() > 0)
+    {
+        _maskTexture.paintOn(_carObject->getMatrix());
+    }
 
     _pos = glm::vec3(_carObject->getMatrix()[3].x, _carObject->getMatrix()[3].y, 0.0f);
     _view = glm::lookAt(_pos + glm::vec3(12.0f), _pos, glm::vec3(0.0f, 0.0f, 1.0f));
@@ -348,6 +203,11 @@ void SnowyJanuary::Update(int dt)
     else if (_userInput.ActionState(UserInputActions::SteerRight))
     {
         _carObject->Steer(-0.01f);
+    }
+
+    if (_userInput.ActionState(UserInputActions::Brake))
+    {
+        _carObject->Brake();
     }
 
     _carObject->Update();
@@ -421,11 +281,11 @@ void SnowyJanuary::RenderUi()
 
             if (_menuMode == MenuModes::MainMenu)
             {
-                if (ImGui::Button("Play!", ImVec2(120, 36)))
+                if (ImGui::Button("Play!", ImVec2(100, 36)))
                 {
                     _menuMode = MenuModes::NoMenu;
                 }
-                if (ImGui::Button("Change keys", ImVec2(120, 36)))
+                if (ImGui::Button("Change keys", ImVec2(100, 36)))
                 {
                     _menuMode = MenuModes::KeyMappingMenu;
                 }
@@ -434,13 +294,13 @@ void SnowyJanuary::RenderUi()
             }
             if (_menuMode == MenuModes::KeyMappingMenu)
             {
-                if (ImGui::Button("Back", ImVec2(120, 36)))
+                if (ImGui::Button("Back", ImVec2(100, 36)))
                 {
                     _menuMode = MenuModes::MainMenu;
                     _userInput.WriteKeyMappings(System::IO::Path::Combine(_settingsDir, KEYMAP_FILE));
                 }
                 ImGui::Columns(2);
-                ImGui::SetColumnWidth(0, 140);
+                ImGui::SetColumnWidth(0, 120);
 
                 ImGui::Text("Action");
                 ImGui::NextColumn();
@@ -451,7 +311,7 @@ void SnowyJanuary::RenderUi()
 
                 for (int i = 0; i < int(UserInputActions::Count); ++i)
                 {
-                    if (ImGui::Button(UserInputActionNames[i], ImVec2(120, 36)))
+                    if (ImGui::Button(UserInputActionNames[i], ImVec2(100, 36)))
                     {
                         _userInput.StartMappingAction((UserInputActions)i);
                     }
@@ -486,4 +346,3 @@ void SnowyJanuary::RenderUi()
 void SnowyJanuary::Destroy()
 {
 }
-

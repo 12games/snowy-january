@@ -20,7 +20,11 @@ public:
     virtual void StartEngine() = 0;
     virtual void ChangeSpeed(float amount) = 0;
     virtual void Steer(float amount) = 0;
+    virtual void Brake() = 0;
     virtual void StopEngine() = 0;
+
+    virtual float Speed() const = 0;
+    virtual float Steering() const = 0;
 };
 
 class PhysicsObjectBuilder

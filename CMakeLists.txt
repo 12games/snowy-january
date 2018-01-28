@@ -21,6 +21,7 @@ add_executable(snowy-january
     include/gl-color-normal-position-vertex.h
     include/gl-masked-textures.h
     include/tiny_obj_loader.h
+    include/capabilityguard.h
     lib/imgui/imgui.cpp
     lib/imgui/imgui.h
     lib/imgui/imgui_draw.cpp
@@ -39,6 +40,8 @@ add_executable(snowy-january
     src/gameobject.cpp
     src/gameobject.h
     src/stb_image.h
+    src/updatingtexture.cpp
+    src/updatingtexture.h
     )
 
 target_include_directories(snowy-january

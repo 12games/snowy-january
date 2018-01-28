@@ -5,6 +5,8 @@
 #include <btBulletDynamicsCommon.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/quaternion.hpp>
 
 class ImplPhysicsObject : public btMotionState, public PhysicsObject
 {
@@ -41,7 +43,7 @@ btRigidBody *ImplPhysicsObject::getRigidBody()
 
 class CarPhysicsObject : public CarObject, public ImplPhysicsObject
 {
-    const float MIN_SPEED = 0.0f;
+    const float MIN_SPEED = -50.0f;
     const float MAX_SPEED = 100.0f;
     const float MIN_STEER = -0.3f;
     const float MAX_STEER = 0.3f;
@@ -49,6 +51,7 @@ class CarPhysicsObject : public CarObject, public ImplPhysicsObject
     bool _engineStarted;
     float _speed;
     float _steering;
+    bool _brakeNextUpdate;
 public:
     CarPhysicsObject();
 
@@ -59,14 +62,18 @@ public:
     virtual void StartEngine();
     virtual void ChangeSpeed(float amount);
     virtual void Steer(float amount);
+    virtual void Brake();
     virtual void StopEngine();
+
+    virtual float Speed() const;
+    virtual float Steering() const;
 
     virtual glm::mat4 const &getMatrix() const;
     virtual class btRigidBody *getRigidBody();
 };
 
 CarPhysicsObject::CarPhysicsObject()
-    : _engineStarted(false), _speed(0.0f), _steering(0.0f)
+    : _engineStarted(false), _speed(0.0f), _steering(0.0f), _brakeNextUpdate(false)
 {
 }
 
@@ -75,6 +82,14 @@ void CarPhysicsObject::Update()
     if (!_engineStarted)
     {
         return;
+    }
+
+    if (_brakeNextUpdate)
+    {
+        _vehicle->setBrake(100.0f, 3);
+        _vehicle->setBrake(100.0f, 2);
+        _speed = 0.0f;
+        _brakeNextUpdate = false;
     }
 
     _vehicle->applyEngineForce(_speed, 3);
@@ -88,8 +103,8 @@ void CarPhysicsObject::StartEngine()
 {
     if (!_engineStarted)
     {
-        // todo play sound of starting engine
-        //      and update UI
+        // todo: play sound of starting engine
+        //       and update UI
     }
 
     _engineStarted = true;
@@ -131,6 +146,12 @@ void CarPhysicsObject::Steer(float amount)
     }
 }
 
+
+void CarPhysicsObject::Brake()
+{
+    _brakeNextUpdate = true;
+}
+
 void CarPhysicsObject::StopEngine()
 {
     if (_engineStarted)
@@ -141,6 +162,16 @@ void CarPhysicsObject::StopEngine()
 
     _engineStarted = false;
     _speed = MIN_SPEED;
+}
+
+float CarPhysicsObject::Speed() const
+{
+    return _speed;
+}
+
+float CarPhysicsObject::Steering() const
+{
+    return _steering;
 }
 
 glm::mat4 const &CarPhysicsObject::getMatrix() const
@@ -158,6 +189,7 @@ PhysicsObjectBuilder::PhysicsObjectBuilder(PhysicsManager &manager)
 {
     _shape = nullptr;
     _initialPos = glm::vec3(0.0f);
+    _initialRot = glm::toQuat(glm::mat4(1.0f));
     _mass = 0;
     _friction = 0.1f;
     _linearDamping = 0.9f;
@@ -178,7 +210,7 @@ PhysicsObject *PhysicsObjectBuilder::Build()
     }
 
     auto obj = new ImplPhysicsObject();
-    obj->_matrix = glm::translate(glm::mat4(1.0f), _initialPos);
+    obj->_matrix = glm::toMat4(_initialRot) * glm::translate(glm::mat4(1.0f), _initialPos);
 
     auto rbInfo = btRigidBody::btRigidBodyConstructionInfo(_mass, obj, _shape, localInertia);
     obj->_rigidBody = new btRigidBody(rbInfo);
@@ -320,6 +352,7 @@ PhysicsObjectBuilder &PhysicsObjectBuilder::Car(glm::vec3 const &size)
     btCollisionShape *shover = new btBoxShape(btVector3(size.x * 1.5f, size.y, 1.0f));
     localTrans.setIdentity();
     localTrans.setOrigin(btVector3(0.0f, size.y + 0.5f, size.z + 1.0f));
+    localTrans.setRotation(btQuaternion(_initialRot.x, _initialRot.y, _initialRot.z, _initialRot.w));
     shape->addChildShape(localTrans, shover);
 
     this->_shape = shape;
