@@ -23,7 +23,7 @@ Game &Game::Instantiate(int argc, char *argv[])
 
 SnowyJanuary::SnowyJanuary(int argc, char *argv[])
     : _floor(_floorShader), _box(_boxShader), _car(_boxShader), _truck(_boxShader),
-      _wheelLeft(_boxShader), _wheelRight(_boxShader)
+      _wheelLeft(_boxShader), _wheelRight(_boxShader), _tree(_boxShader)
 {
     System::IO::FileInfo exe(argv[0]);
     _settingsDir = exe.Directory().FullName();
@@ -200,6 +200,23 @@ bool SnowyJanuary::Setup()
         }
     }
 
+//    tinyobj::attrib_t attrib_tree;
+//    std::vector<tinyobj::shape_t> shapes_tree;
+//    std::vector<tinyobj::material_t> materials_tree;
+//    ret = tinyobj::LoadObj(&attrib_tree, &shapes_tree, &materials_tree, &err, "../01-snowy-january/assets/tree.obj");
+
+//    if (!ret)
+//    {
+//        std::cerr << "LoadObj failed" << std::endl;
+
+//        return false;
+//    }
+
+//    for (size_t s = 0; s < shapes.size(); s++)
+//    {
+//        fillFromObjShape(_tree, shapes_tree[s], attrib_tree);
+//    }
+
     //    auto obj = PhysicsObjectBuilder(_physics)
     //                   .Cone(1.0f, 4.0f)
     //                   .Mass(0.0f)
@@ -208,14 +225,14 @@ bool SnowyJanuary::Setup()
     //                   .Build();
     //    _physics.AddObject(obj);
 
-    auto bluePixels = _maskTexture.listBluePixels();
+    _treeLocations = _maskTexture.listBluePixels();
 
     auto builder = PhysicsObjectBuilder(_physics)
                        .Cone(1.0f, 4.0f)
                        .Mass(0.0f)
                        .InitialRotation(glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f)));
 
-    for (auto pos : bluePixels)
+    for (auto pos : _treeLocations)
     {
         auto obj = builder
                        .InitialPosition(glm::vec3(pos.x, 2.2f, pos.y))
@@ -311,7 +328,7 @@ void SnowyJanuary::Render()
     }
 
     {
-        CapabilityGuard cullFace(GL_CULL_FACE, true);
+        CapabilityGuard cullFace(GL_CULL_FACE, false);
         CapabilityGuard depthTest(GL_DEPTH_TEST, true);
 
         // Select shader
@@ -337,6 +354,12 @@ void SnowyJanuary::Render()
 
         _boxShader.setupMatrices(_proj, _view, _carObject->getWheelMatrix(3));
         _wheelLeft.render();
+
+        for (auto pos : _treeLocations)
+        {
+            _boxShader.setupMatrices(_proj, _view, glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, 2.2f)));
+            _tree.render();
+        }
         glFrontFace(GL_CCW);
     }
     CapabilityGuard depthTest(GL_DEPTH_TEST, false);

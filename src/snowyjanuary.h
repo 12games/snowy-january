@@ -32,6 +32,7 @@ class SnowyJanuary : public Game
     BufferType _truck;
     BufferType _wheelLeft;
     BufferType _wheelRight;
+    BufferType _tree;
     float _camOffset[3];
 
     unsigned int _snowTexture;
@@ -45,6 +46,7 @@ class SnowyJanuary : public Game
     PhysicsObject *_boxObject2;
     CarObject *_carObject;
     std::vector<PhysicsObject *> _treeObjects;
+    std::vector<glm::vec2> _treeLocations;
 
     unsigned int uploadTexture(std::string const &filename);
 

@@ -1,5 +1,9 @@
 # Progress
 
+## January 31
+![Screenshot 08](progress/screenshot08.png)
+Added loading the truck with seperate wheels from obj file.
+
 ## January 27
 ![Screenshot 07](progress/screenshot07.png)
 Controlling the car is now done by the keyboard, with mapped keys saved and loaded from/to disk.
