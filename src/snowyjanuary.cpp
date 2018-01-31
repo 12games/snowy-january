@@ -55,12 +55,20 @@ unsigned int SnowyJanuary::uploadTexture(std::string const &filename)
     return texture;
 }
 
-void fillFromObjShape(BufferType &buf, tinyobj::shape_t const &shape, tinyobj::attrib_t const &attrib)
+void fillFromObjShape(BufferType &buf, tinyobj::shape_t const &shape, tinyobj::attrib_t const &attrib, std::vector<tinyobj::material_t> const &materials)
 {
     // Loop over faces(polygon)
     size_t index_offset = 0;
     for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++)
     {
+        if (materials.size() > 0 && shape.mesh.material_ids[f] >= 0)
+        {
+            // per-face material
+            auto m = materials[shape.mesh.material_ids[f]];
+
+            buf.color(glm::vec4(m.diffuse[0], m.diffuse[1], m.diffuse[2], 1.0f));
+        }
+
         int fv = shape.mesh.num_face_vertices[f];
 
         // Loop over vertices in the face.
@@ -85,9 +93,6 @@ void fillFromObjShape(BufferType &buf, tinyobj::shape_t const &shape, tinyobj::a
                 .vertex(glm::vec3(vx, vy, vz));
         }
         index_offset += fv;
-
-        // per-face material
-        shape.mesh.material_ids[f];
     }
 
     buf.scale(glm::vec3(0.2f))
@@ -188,15 +193,15 @@ bool SnowyJanuary::Setup()
     {
         if (shapes[s].name == "Truck_Center")
         {
-            fillFromObjShape(_truck, shapes[s], attrib);
+            fillFromObjShape(_truck, shapes[s], attrib, materials);
         }
         if (shapes[s].name == "Wheel.001_Left")
         {
-            fillFromObjShape(_wheelLeft, shapes[s], attrib);
+            fillFromObjShape(_wheelLeft, shapes[s], attrib, materials);
         }
         if (shapes[s].name == "Wheel.000_Right")
         {
-            fillFromObjShape(_wheelRight, shapes[s], attrib);
+            fillFromObjShape(_wheelRight, shapes[s], attrib, materials);
         }
     }
 
