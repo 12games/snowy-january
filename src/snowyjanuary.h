@@ -29,6 +29,10 @@ class SnowyJanuary : public Game
     ShaderType _boxShader;
     BufferType _box;
     BufferType _car;
+    BufferType _truck;
+    BufferType _wheelLeft;
+    BufferType _wheelRight;
+    float _camOffset[3];
 
     unsigned int _snowTexture;
     unsigned int _grassTexture;

@@ -52,6 +52,8 @@ class CarPhysicsObject : public CarObject, public ImplPhysicsObject
     float _speed;
     float _steering;
     bool _brakeNextUpdate;
+    glm::mat4 _wheelMatrix[4];
+
 public:
     CarPhysicsObject();
 
@@ -70,6 +72,8 @@ public:
 
     virtual glm::mat4 const &getMatrix() const;
     virtual class btRigidBody *getRigidBody();
+
+    virtual glm::mat4 const &getWheelMatrix(int wheel) const;
 };
 
 CarPhysicsObject::CarPhysicsObject()
@@ -97,6 +101,13 @@ void CarPhysicsObject::Update()
 
     _vehicle->setSteeringValue(_steering, 1);
     _vehicle->setSteeringValue(_steering, 0);
+
+    for (int i = 0; i < 4; i++)
+    {
+        auto info = _vehicle->getWheelInfo(i);
+
+        info.m_worldTransform.getOpenGLMatrix(glm::value_ptr(_wheelMatrix[i]));
+    }
 }
 
 void CarPhysicsObject::StartEngine()
@@ -146,7 +157,6 @@ void CarPhysicsObject::Steer(float amount)
     }
 }
 
-
 void CarPhysicsObject::Brake()
 {
     _brakeNextUpdate = true;
@@ -172,6 +182,11 @@ float CarPhysicsObject::Speed() const
 float CarPhysicsObject::Steering() const
 {
     return _steering;
+}
+
+glm::mat4 const &CarPhysicsObject::getWheelMatrix(int wheel) const
+{
+    return _wheelMatrix[wheel];
 }
 
 glm::mat4 const &CarPhysicsObject::getMatrix() const
@@ -236,12 +251,12 @@ void addWheels(
 
     btScalar wheelWidth(0.6f);
 
-    btScalar wheelRadius(0.5f);
+    btScalar wheelRadius(0.2f);
 
     btScalar connectionHeight(.2f);
 
     //All the wheel configuration assumes the vehicle is centered at the origin and a right handed coordinate system is used
-    btVector3 wheelConnectionPoint(halfExtents.x() - wheelRadius, halfExtents.z() - wheelWidth, connectionHeight);
+    btVector3 wheelConnectionPoint(halfExtents.x() * 0.6f - wheelRadius, halfExtents.z() * 0.9f - wheelWidth, connectionHeight);
 
     //Adds the front wheels to the btRaycastVehicle by shifting the connection point
     vehicle->addWheel(wheelConnectionPoint * btVector3(1, 1, 1), wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, true);

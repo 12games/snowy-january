@@ -20,6 +20,7 @@ add_executable(snowy-january
     include/gl-color-position-vertex.h
     include/gl-color-normal-position-vertex.h
     include/gl-masked-textures.h
+    include/gl-obj-renderer.h
     include/tiny_obj_loader.h
     include/capabilityguard.h
     lib/imgui/imgui.cpp

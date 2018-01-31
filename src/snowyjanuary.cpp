@@ -10,6 +10,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#include "tiny_obj_loader.h"
+
 #define KEYMAP_FILE "snowyjanuary.keymap"
 
 Game &Game::Instantiate(int argc, char *argv[])
@@ -20,7 +22,8 @@ Game &Game::Instantiate(int argc, char *argv[])
 }
 
 SnowyJanuary::SnowyJanuary(int argc, char *argv[])
-    : _floor(_floorShader), _box(_boxShader), _car(_boxShader)
+    : _floor(_floorShader), _box(_boxShader), _car(_boxShader), _truck(_boxShader),
+      _wheelLeft(_boxShader), _wheelRight(_boxShader)
 {
     System::IO::FileInfo exe(argv[0]);
     _settingsDir = exe.Directory().FullName();
@@ -52,9 +55,53 @@ unsigned int SnowyJanuary::uploadTexture(std::string const &filename)
     return texture;
 }
 
+void fillFromObjShape(BufferType &buf, tinyobj::shape_t const &shape, tinyobj::attrib_t const &attrib)
+{
+    // Loop over faces(polygon)
+    size_t index_offset = 0;
+    for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++)
+    {
+        int fv = shape.mesh.num_face_vertices[f];
+
+        // Loop over vertices in the face.
+        for (size_t v = 0; v < fv; v++)
+        {
+            // access to vertex
+            tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
+            tinyobj::real_t vx = attrib.vertices[3 * idx.vertex_index + 0];
+            tinyobj::real_t vy = attrib.vertices[3 * idx.vertex_index + 1];
+            tinyobj::real_t vz = attrib.vertices[3 * idx.vertex_index + 2];
+            tinyobj::real_t nx = attrib.normals[3 * idx.normal_index + 0];
+            tinyobj::real_t ny = attrib.normals[3 * idx.normal_index + 1];
+            tinyobj::real_t nz = attrib.normals[3 * idx.normal_index + 2];
+            //                tinyobj::real_t tx = attrib.texcoords[2 * idx.texcoord_index + 0];
+            //                tinyobj::real_t ty = attrib.texcoords[2 * idx.texcoord_index + 1];
+            // Optional: vertex colors
+            // tinyobj::real_t red = attrib.colors[3*idx.vertex_index+0];
+            // tinyobj::real_t green = attrib.colors[3*idx.vertex_index+1];
+            // tinyobj::real_t blue = attrib.colors[3*idx.vertex_index+2];
+
+            buf.normal(glm::vec3(nx, ny, nz))
+                .vertex(glm::vec3(vx, vy, vz));
+        }
+        index_offset += fv;
+
+        // per-face material
+        shape.mesh.material_ids[f];
+    }
+
+    buf.scale(glm::vec3(0.2f))
+        .fillColor(glm::vec4(0.0f, 0.3f, 0.5f, 1.0f))
+        .setup(GL_TRIANGLES);
+}
+
 bool SnowyJanuary::Setup()
 {
+    _camOffset[0] = _camOffset[1] = _camOffset[2] = 5.0f;
+
     _userInput.ReadKeyMappings(System::IO::Path::Combine(_settingsDir, KEYMAP_FILE));
+
+    glm::vec2 groundSize(50.0f);
 
     glActiveTexture(GL_TEXTURE0);
     _snowTexture = uploadTexture("../01-snowy-january/assets/snow.bmp");
@@ -64,7 +111,7 @@ bool SnowyJanuary::Setup()
     _asphaltTexture = uploadTexture("../01-snowy-january/assets/asphalt.bmp");
     glActiveTexture(GL_TEXTURE2);
     _maskTexture.loadTexture("../01-snowy-january/assets/level.png");
-    _maskTexture.setPlaneSize(glm::vec2(20.0f, 20.0f));
+    _maskTexture.setPlaneSize(groundSize);
 
     ImGuiIO &io = ImGui::GetIO();
     ImFont *font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\tahoma.ttf", 18.0f, NULL);
@@ -84,11 +131,11 @@ bool SnowyJanuary::Setup()
     _boxShader.compileDefaultShader();
 
     // Setting up the vertex buffer
-    _floor.planeTriangleFan(glm::vec2(20.0f), glm::vec2(5.12f))
+    _floor.planeTriangleFan(groundSize, glm::vec2(5.12f))
         .setup();
 
     _floorObject = PhysicsObjectBuilder(_physics)
-                       .Box(glm::vec3(20.0f, 20.0f, 0.1f))
+                       .Box(glm::vec3(groundSize.x, groundSize.y, 0.1f))
                        .Mass(0.0f)
                        .Build();
     _physics.AddObject(_floorObject);
@@ -123,6 +170,35 @@ bool SnowyJanuary::Setup()
                      .InitialPosition(glm::vec3(0.0f, 0.0f, 2.0f))
                      .BuildCar();
     _physics.AddObject(_carObject);
+
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string err;
+    bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "../01-snowy-january/assets/mini-dozer.obj");
+
+    if (!ret)
+    {
+        std::cerr << "LoadObj failed" << std::endl;
+
+        return false;
+    }
+
+    for (size_t s = 0; s < shapes.size(); s++)
+    {
+        if (shapes[s].name == "Truck_Center")
+        {
+            fillFromObjShape(_truck, shapes[s], attrib);
+        }
+        if (shapes[s].name == "Wheel.001_Left")
+        {
+            fillFromObjShape(_wheelLeft, shapes[s], attrib);
+        }
+        if (shapes[s].name == "Wheel.000_Right")
+        {
+            fillFromObjShape(_wheelRight, shapes[s], attrib);
+        }
+    }
 
     //    auto obj = PhysicsObjectBuilder(_physics)
     //                   .Cone(1.0f, 4.0f)
@@ -160,7 +236,7 @@ void SnowyJanuary::Resize(int width, int height)
 
     // Calculate the projection and view matrix
     _proj = glm::perspective(glm::radians(90.0f), float(width) / float(height), 0.1f, 4096.0f);
-    _view = glm::lookAt(_pos + glm::vec3(12.0f), _pos, glm::vec3(0.0f, 0.0f, 1.0f));
+    _view = glm::lookAt(_pos + glm::vec3(5.0f, 5.0f, 0.0f), _pos, glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
 void SnowyJanuary::Update(int dt)
@@ -176,7 +252,7 @@ void SnowyJanuary::Update(int dt)
     }
 
     _pos = glm::vec3(_carObject->getMatrix()[3].x, _carObject->getMatrix()[3].y, 0.0f);
-    _view = glm::lookAt(_pos + glm::vec3(12.0f), _pos, glm::vec3(0.0f, 0.0f, 1.0f));
+    _view = glm::lookAt(_pos + glm::vec3(_camOffset[0], _camOffset[1], _camOffset[2]), _pos, glm::vec3(0.0f, 0.0f, 1.0f));
 
     if (_userInput.ActionState(UserInputActions::StartEngine))
     {
@@ -246,8 +322,22 @@ void SnowyJanuary::Render()
         _boxShader.setupMatrices(_proj, _view, _boxObject2->getMatrix());
         _box.render();
 
+        glFrontFace(GL_CW);
         _boxShader.setupMatrices(_proj, _view, _carObject->getMatrix());
-        _car.render();
+        _truck.render();
+
+        _boxShader.setupMatrices(_proj, _view, _carObject->getWheelMatrix(0));
+        _wheelRight.render();
+
+        _boxShader.setupMatrices(_proj, _view, _carObject->getWheelMatrix(1));
+        _wheelLeft.render();
+
+        _boxShader.setupMatrices(_proj, _view, _carObject->getWheelMatrix(2));
+        _wheelRight.render();
+
+        _boxShader.setupMatrices(_proj, _view, _carObject->getWheelMatrix(3));
+        _wheelLeft.render();
+        glFrontFace(GL_CCW);
     }
     CapabilityGuard depthTest(GL_DEPTH_TEST, false);
     _physics.DebugDraw(_proj, _view);
@@ -257,16 +347,22 @@ void SnowyJanuary::RenderUi()
 {
     static bool show_gui = true;
 
+    float panelWidth = _width > 1024 ? 512 : 275;
+
     if (_menuMode == MenuModes::NoMenu)
     {
         ImGui::Begin("Settings", &show_gui, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings);
         {
             ImGui::SetWindowPos(ImVec2(0, 0));
-            ImGui::SetWindowSize(ImVec2(160, 64));
+//            ImGui::SetWindowSize(ImVec2(160, 64));
+            ImGui::SetWindowSize(ImVec2(panelWidth, _height));
             if (ImGui::Button("Pause", ImVec2(120, 36)))
             {
                 _menuMode = MenuModes::MainMenu;
             }
+            ImGui::SliderFloat("Cam X", &(_camOffset[0]), -5.0f, 5.0f);
+            ImGui::SliderFloat("Cam Y", &(_camOffset[1]), -5.0f, 5.0f);
+            ImGui::SliderFloat("Cam Z", &(_camOffset[2]), -5.0f, 5.0f);
             ImGui::End();
         }
         return;
@@ -275,7 +371,6 @@ void SnowyJanuary::RenderUi()
     {
         ImGui::Begin("Settings", &show_gui, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings);
         {
-            float panelWidth = _width > 1024 ? 512 : 275;
             ImGui::SetWindowPos(ImVec2(0, 0));
             ImGui::SetWindowSize(ImVec2(panelWidth, _height));
 

@@ -119,19 +119,19 @@ void UpdatingTexture::paintOn(glm::mat4 const &modelMatrix)
 
     // Calculate the position in texture-space
     glm::vec2 pos(
-        int((modelMatrix[3].x + (_planeSize.x / 2.0f)) * (_textureSize.x / 20.0f)),
-        int((modelMatrix[3].y + (_planeSize.x / 2.0f)) * (_textureSize.y / 20.0f)));
+        int((modelMatrix[3].x + (_planeSize.x / 2.0f)) * (_textureSize.x / _planeSize.x)),
+        int((modelMatrix[3].y + (_planeSize.y / 2.0f)) * (_textureSize.y / _planeSize.y)));
 
     glm::vec2 dir = glm::vec2(modelMatrix[1].x, modelMatrix[1].y);
     glm::vec2 right = glm::vec2(modelMatrix[0].x, modelMatrix[0].y);
 
     // three lines to make sure the most pixels are painted over even when the car is moving fast or making  sharp turn
-    auto localPos = pos + (dir * 30.0f);
-    paintLine(localPos + (right * 20.0f), localPos + (right * -20.0f), std::vector<unsigned char>({0, 255, 0, 0}));
-    localPos = pos + (dir * 29.0f);
-    paintLine(localPos + (right * 20.0f), localPos + (right * -20.0f), std::vector<unsigned char>({0, 255, 0, 0}));
-    localPos = pos + (dir * 28.0f);
-    paintLine(localPos + (right * 20.0f), localPos + (right * -20.0f), std::vector<unsigned char>({0, 255, 0, 0}));
+    auto localPos = pos + (dir * 10.0f);
+    paintLine(localPos + (right * 10.0f), localPos + (right * -10.0f), std::vector<unsigned char>({0, 255, 0, 0}));
+    localPos = pos + (dir * 9.0f);
+    paintLine(localPos + (right * 10.0f), localPos + (right * -10.0f), std::vector<unsigned char>({0, 255, 0, 0}));
+    localPos = pos + (dir * 8.0f);
+    paintLine(localPos + (right * 10.0f), localPos + (right * -10.0f), std::vector<unsigned char>({0, 255, 0, 0}));
 
     glTexImage2D(GL_TEXTURE_2D, 0, _comp == 4 ? GL_RGBA : GL_RGB, _textureSize.x, _textureSize.y, 0, _comp == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, _pixels);
 }

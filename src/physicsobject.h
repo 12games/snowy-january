@@ -25,6 +25,8 @@ public:
 
     virtual float Speed() const = 0;
     virtual float Steering() const = 0;
+
+    virtual glm::mat4 const &getWheelMatrix(int wheel) const = 0;
 };
 
 class PhysicsObjectBuilder
