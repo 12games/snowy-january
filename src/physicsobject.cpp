@@ -53,12 +53,13 @@ class CarPhysicsObject : public CarObject, public ImplPhysicsObject
     float _steering;
     bool _brakeNextUpdate;
     glm::mat4 _wheelMatrix[4];
+    btRaycastVehicle *_vehicle;
+    btDefaultVehicleRaycaster *_vehicleRayCaster;
 
 public:
     CarPhysicsObject();
 
-    btRaycastVehicle *_vehicle;
-    btDefaultVehicleRaycaster *_vehicleRayCaster;
+    void SetVehicle(btRaycastVehicle *vehicle, btDefaultVehicleRaycaster *vehicleRayCaster);
 
     virtual void Update();
     virtual void StartEngine();
@@ -70,6 +71,8 @@ public:
     virtual float Speed() const;
     virtual float Steering() const;
 
+    void setWorldTransform(const btTransform &worldTrans);
+
     virtual glm::mat4 const &getMatrix() const;
     virtual class btRigidBody *getRigidBody();
 
@@ -79,6 +82,28 @@ public:
 CarPhysicsObject::CarPhysicsObject()
     : _engineStarted(false), _speed(0.0f), _steering(0.0f), _brakeNextUpdate(false)
 {
+    _wheelMatrix[0] = glm::mat4(1.0f);
+    _wheelMatrix[1] = glm::mat4(1.0f);
+    _wheelMatrix[2] = glm::mat4(1.0f);
+    _wheelMatrix[3] = glm::mat4(1.0f);
+}
+
+void CarPhysicsObject::setWorldTransform(const btTransform &worldTrans)
+{
+    for (int i = 0; i < 4; i++)
+    {
+        auto info = _vehicle->getWheelInfo(i);
+
+        info.m_worldTransform.getOpenGLMatrix(glm::value_ptr(_wheelMatrix[i]));
+    }
+
+    ImplPhysicsObject::setWorldTransform(worldTrans);
+}
+
+void CarPhysicsObject::SetVehicle(btRaycastVehicle *vehicle, btDefaultVehicleRaycaster *vehicleRayCaster)
+{
+    _vehicle = vehicle;
+    _vehicleRayCaster = vehicleRayCaster;
 }
 
 void CarPhysicsObject::Update()
@@ -311,15 +336,17 @@ CarObject *PhysicsObjectBuilder::BuildCar()
     btScalar suspensionRestLength(0.6f);
     btRaycastVehicle::btVehicleTuning _tuning;
 
-    obj->_vehicleRayCaster = new btDefaultVehicleRaycaster(_manager._dynamicsWorld);
-    obj->_vehicle = new btRaycastVehicle(_tuning, reinterpret_cast<btRigidBody *>(obj->_rigidBody), obj->_vehicleRayCaster);
+    auto vehicleRayCaster = new btDefaultVehicleRaycaster(_manager._dynamicsWorld);
+    auto vehicle = new btRaycastVehicle(_tuning, reinterpret_cast<btRigidBody *>(obj->_rigidBody), vehicleRayCaster);
 
     // TODO Move this to the AddObject() function of PhycsManager?
-    _manager._dynamicsWorld->addVehicle(obj->_vehicle);
+    _manager._dynamicsWorld->addVehicle(vehicle);
 
-    obj->_vehicle->setCoordinateSystem(0, 1, 2);
+    vehicle->setCoordinateSystem(0, 1, 2);
 
-    addWheels(btVector3(_inputSize.x, _inputSize.y, _inputSize.z), obj->_vehicle, _tuning);
+    addWheels(btVector3(_inputSize.x, _inputSize.y, _inputSize.z), vehicle, _tuning);
+
+    obj->SetVehicle(vehicle, vehicleRayCaster);
 
     return obj;
 }
