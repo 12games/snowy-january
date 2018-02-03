@@ -59,7 +59,8 @@ void fillFromObjShape(BufferType &buf, tinyobj::shape_t const &shape, tinyobj::a
 {
     // Loop over faces(polygon)
     size_t index_offset = 0;
-    for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++)
+    int faceCount = shape.mesh.num_face_vertices.size();
+    for (int f = 0; f < faceCount; f++)
     {
         if (materials.size() > 0 && shape.mesh.material_ids[f] >= 0)
         {
@@ -96,7 +97,6 @@ void fillFromObjShape(BufferType &buf, tinyobj::shape_t const &shape, tinyobj::a
     }
 
     buf.scale(glm::vec3(0.2f))
-        .fillColor(glm::vec4(0.0f, 0.3f, 0.5f, 1.0f))
         .setup(GL_TRIANGLES);
 }
 
@@ -180,9 +180,8 @@ bool SnowyJanuary::Setup()
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string err;
-    bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "../01-snowy-january/assets/mini-dozer.obj");
 
-    if (!ret)
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "../01-snowy-january/assets/mini-dozer.obj", "../01-snowy-january/assets/"))
     {
         std::cerr << "LoadObj failed" << std::endl;
 
@@ -205,30 +204,21 @@ bool SnowyJanuary::Setup()
         }
     }
 
-//    tinyobj::attrib_t attrib_tree;
-//    std::vector<tinyobj::shape_t> shapes_tree;
-//    std::vector<tinyobj::material_t> materials_tree;
-//    ret = tinyobj::LoadObj(&attrib_tree, &shapes_tree, &materials_tree, &err, "../01-snowy-january/assets/tree.obj");
+    tinyobj::attrib_t attrib_tree;
+    std::vector<tinyobj::shape_t> shapes_tree;
+    std::vector<tinyobj::material_t> materials_tree;
 
-//    if (!ret)
-//    {
-//        std::cerr << "LoadObj failed" << std::endl;
+    if (!tinyobj::LoadObj(&attrib_tree, &shapes_tree, &materials_tree, &err, "../01-snowy-january/assets/tree.obj", "../01-snowy-january/assets/"))
+    {
+        std::cerr << "LoadObj failed" << std::endl;
 
-//        return false;
-//    }
+        return false;
+    }
 
-//    for (size_t s = 0; s < shapes.size(); s++)
-//    {
-//        fillFromObjShape(_tree, shapes_tree[s], attrib_tree);
-//    }
-
-    //    auto obj = PhysicsObjectBuilder(_physics)
-    //                   .Cone(1.0f, 4.0f)
-    //                   .Mass(0.0f)
-    //                   .InitialPosition(glm::vec3(5.0f, 2.2f, 5.0f))
-    //                   .InitialRotation(glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f)))
-    //                   .Build();
-    //    _physics.AddObject(obj);
+    for (size_t s = 0; s < shapes_tree.size(); s++)
+    {
+        fillFromObjShape(_tree, shapes_tree[s], attrib_tree, materials_tree);
+    }
 
     _treeLocations = _maskTexture.listBluePixels();
 
@@ -360,15 +350,15 @@ void SnowyJanuary::Render()
         _boxShader.setupMatrices(_proj, _view, _carObject->getWheelMatrix(3));
         _wheelLeft.render();
 
-        for (auto pos : _treeLocations)
+        for (auto tree : _treeObjects)
         {
-            _boxShader.setupMatrices(_proj, _view, glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, 2.2f)));
+            _boxShader.setupMatrices(_proj, _view, tree->getMatrix());
             _tree.render();
         }
         glFrontFace(GL_CCW);
     }
     CapabilityGuard depthTest(GL_DEPTH_TEST, false);
-    _physics.DebugDraw(_proj, _view);
+    //_physics.DebugDraw(_proj, _view);
 }
 
 void SnowyJanuary::RenderUi()

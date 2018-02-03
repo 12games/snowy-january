@@ -339,7 +339,7 @@ public:
                 "    vec3 l = normalize( LightDirection_cameraspace );"
                 "    float cosTheta = clamp(dot(n, l), 0.3, 1);"
 
-                "    f_color = (cosTheta * color) + vec4(0.3, 0.3, 0.3, 1.0);"
+                "    f_color = (cosTheta * color) + (color * vec4(0.8, 0.8, 0.8, 1.0));"
                 "}");
 
             std::string const fshader(

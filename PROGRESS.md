@@ -1,5 +1,9 @@
 # Progress
 
+## February 3
+![Screenshot 09](progress/screenshot09.png)
+Fixed loading of materials which got me dazzled the last night of january. Looks a lot better right!
+
 ## January 31
 ![Screenshot 08](progress/screenshot08.png)
 Added loading the truck with seperate wheels from obj file.
