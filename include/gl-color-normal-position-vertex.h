@@ -315,43 +315,43 @@ public:
             std::string const vshader(
                 "#version 150\n"
 
-                "in vec3 vertex;"
-                "in vec4 color;"
-                "in vec3 normal;"
+                "in vec3 vertex;\n"
+                "in vec4 color;\n"
+                "in vec3 normal;\n"
 
-                "uniform mat4 u_projection;"
-                "uniform mat4 u_view;"
-                "uniform mat4 u_model;"
+                "uniform mat4 u_projection;\n"
+                "uniform mat4 u_view;\n"
+                "uniform mat4 u_model;\n"
 
-                "out vec4 f_color;"
+                "out vec4 f_color;\n"
 
-                "void main()"
-                "{"
-                "    gl_Position = u_projection * u_view * u_model * vec4(vertex.xyz, 1.0);"
-                "    f_color = color;"
+                "void main()\n"
+                "{\n"
+                "    gl_Position = u_projection * u_view * u_model * vec4(vertex.xyz, 1.0);\n"
+                "    f_color = color;\n"
 
-                "    vec3 vertexPosition_cameraspace  = (u_view * u_model * vec4(vertex, 0)).xyz;"
-                "    vec3 EyeDirection_cameraspace = vec3(0,0,0) - vertexPosition_cameraspace;"
-                "    vec3 LightPosition_cameraspace = (u_view * vec4(-500.0, -500.0, 500.0,1)).xyz;"
-                "    vec3 LightDirection_cameraspace = LightPosition_cameraspace + EyeDirection_cameraspace;"
-                "    vec3 Normal_cameraspace = (u_view * u_model * vec4(normal, 0)).xyz;"
-                "    vec3 n = normalize( Normal_cameraspace );"
-                "    vec3 l = normalize( LightDirection_cameraspace );"
-                "    float cosTheta = clamp(dot(n, l), 0.3, 1);"
+                "    vec3 vertexPosition_cameraspace  = (u_view * u_model * vec4(vertex, 0)).xyz;\n"
+                "    vec3 EyeDirection_cameraspace = vec3(0,0,0) - vertexPosition_cameraspace;\n"
+                "    vec3 LightPosition_cameraspace = (u_view * vec4(-500.0, -500.0, 500.0,1)).xyz;\n"
+                "    vec3 LightDirection_cameraspace = LightPosition_cameraspace + EyeDirection_cameraspace;\n"
+                "    vec3 Normal_cameraspace = (u_view * u_model * vec4(normal, 0)).xyz;\n"
+                "    vec3 n = normalize( Normal_cameraspace );\n"
+                "    vec3 l = normalize( LightDirection_cameraspace );\n"
+                "    float cosTheta = clamp(dot(n, l), 0.3, 1);\n"
 
-                "    f_color = (cosTheta * color) + (color * vec4(0.8, 0.8, 0.8, 1.0));"
-                "}");
+                "    f_color = (cosTheta * color) + (color * vec4(0.8, 0.8, 0.8, 1.0));\n"
+                "}\n");
 
             std::string const fshader(
                 "#version 150\n"
 
-                "in vec4 f_color;"
-                "out vec4 color;"
+                "in vec4 f_color;\n"
+                "out vec4 color;\n"
 
-                "void main()"
-                "{"
-                "   color = f_color;"
-                "}");
+                "void main()\n"
+                "{\n"
+                "   color = f_color;\n"
+                "}\n");
 
             if (compile(vshader, fshader))
             {

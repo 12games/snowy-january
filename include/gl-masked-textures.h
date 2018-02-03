@@ -87,45 +87,45 @@ public:
             std::string const vshader(
                 "#version 150\n"
 
-                "in vec3 vertex;"
-                "in vec4 color;"
-                "in vec4 uvs;"
+                "in vec3 vertex;\n"
+                "in vec4 color;\n"
+                "in vec4 uvs;\n"
 
-                "uniform mat4 u_projection;"
-                "uniform mat4 u_view;"
-                "uniform mat4 u_model;"
+                "uniform mat4 u_projection;\n"
+                "uniform mat4 u_view;\n"
+                "uniform mat4 u_model;\n"
 
-                "out vec4 f_color;"
-                "out vec4 f_uvs;"
+                "out vec4 f_color;\n"
+                "out vec4 f_uvs;\n"
 
-                "void main()"
-                "{"
-                "    gl_Position = u_projection * u_view * u_model * vec4(vertex.xyz, 1.0);"
-                "    f_color = color;"
-                "    f_uvs = vec4(uvs.st, vertex.x > 0 ? 1.0f : 0.0f, vertex.y > 0 ? 1.0f : 0.0f);"
-                "}");
+                "void main()\n"
+                "{\n"
+                "    gl_Position = u_projection * u_view * u_model * vec4(vertex.xyz, 1.0);\n"
+                "    f_color = color;\n"
+                "    f_uvs = vec4(uvs.st, vertex.x > 0 ? 1.0f : 0.0f, vertex.y > 0 ? 1.0f : 0.0f);\n"
+                "}\n");
 
             std::string const fshader(
                 "#version 150\n"
 
-                "uniform sampler2D u_texture1;"
-                "uniform sampler2D u_texture2;"
-                "uniform sampler2D u_texture3;"
-                "uniform sampler2D u_mask;"
+                "uniform sampler2D u_texture1;\n"
+                "uniform sampler2D u_texture2;\n"
+                "uniform sampler2D u_texture3;\n"
+                "uniform sampler2D u_mask;\n"
 
-                "in vec4 f_color;"
-                "in vec4 f_uvs;"
-                "out vec4 color;"
+                "in vec4 f_color;\n"
+                "in vec4 f_uvs;\n"
+                "out vec4 color;\n"
 
-                "void main()"
-                "{"
-                "   vec4 mask = texture(u_mask, f_uvs.zw);"
-                "   vec4 color1 = (texture(u_texture1, f_uvs.st) * mask.x)"
-                "               + (texture(u_texture2, f_uvs.st) * (1.0 - mask.x));"
-                "   vec4 color2 = (color1 * mask.y)"
-                "               + (texture(u_texture3, f_uvs.st) * (1.0 - mask.y));"
-                "   color = color2;"
-                "}");
+                "void main()\n"
+                "{\n"
+                "   vec4 mask = texture(u_mask, f_uvs.zw);\n"
+                "   vec4 color1 = (texture(u_texture2, f_uvs.st) * mask.x)\n"
+                "               + (texture(u_texture1, f_uvs.st) * (1.0 - mask.x));\n"
+                "   vec4 color2 = (color1 * mask.y)\n"
+                "               + (texture(u_texture3, f_uvs.st) * (1.0 - mask.y));\n"
+                "   color = color2;\n"
+                "}\n");
 
             if (compile(vshader, fshader))
             {
@@ -230,18 +230,18 @@ public:
         glUniformMatrix4fv(_modelUniformId, 1, false, glm::value_ptr(model));
     }
 
-    void setupTextures(unsigned int texture0, unsigned int texture1, unsigned int texture2, unsigned int mask) const
+    void setupTextures(unsigned int texture1, unsigned int texture2, unsigned int texture3, unsigned int mask) const
     {
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture0);
+        glBindTexture(GL_TEXTURE_2D, texture1);
         glUniform1i(_textureUniform1Id, 0);
 
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, texture1);
+        glBindTexture(GL_TEXTURE_2D, texture2);
         glUniform1i(_textureUniform2Id, 1);
 
         glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, texture2);
+        glBindTexture(GL_TEXTURE_2D, texture3);
         glUniform1i(_textureUniform3Id, 2);
 
         glActiveTexture(GL_TEXTURE3);

@@ -27,7 +27,6 @@ class SnowyJanuary : public Game
     MaskedTexturesBuffer::ShaderType _floorShader;
     MaskedTexturesBuffer::BufferType _floor;
     ShaderType _boxShader;
-    BufferType _box;
     BufferType _car;
     BufferType _truck;
     BufferType _wheelLeft;
@@ -42,8 +41,6 @@ class SnowyJanuary : public Game
 
     PhysicsManager _physics;
     PhysicsObject *_floorObject;
-    PhysicsObject *_boxObject1;
-    PhysicsObject *_boxObject2;
     CarObject *_carObject;
     std::vector<PhysicsObject *> _treeObjects;
     std::vector<glm::vec2> _treeLocations;

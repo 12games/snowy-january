@@ -22,7 +22,7 @@ Game &Game::Instantiate(int argc, char *argv[])
 }
 
 SnowyJanuary::SnowyJanuary(int argc, char *argv[])
-    : _floor(_floorShader), _box(_boxShader), _car(_boxShader), _truck(_boxShader),
+    : _floor(_floorShader), _car(_boxShader), _truck(_boxShader),
       _wheelLeft(_boxShader), _wheelRight(_boxShader), _tree(_boxShader)
 {
     System::IO::FileInfo exe(argv[0]);
@@ -44,10 +44,12 @@ unsigned int SnowyJanuary::uploadTexture(std::string const &filename)
 
     glBindTexture(GL_TEXTURE_2D, texture);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
     glTexImage2D(GL_TEXTURE_2D, 0, comp == 4 ? GL_RGBA : GL_RGB, x, y, 0, comp == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
     free(pixels);
 
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -109,12 +111,12 @@ bool SnowyJanuary::Setup()
     glm::vec2 groundSize(50.0f);
 
     glActiveTexture(GL_TEXTURE0);
-    _snowTexture = uploadTexture("../01-snowy-january/assets/snow.bmp");
+    _asphaltTexture = uploadTexture("../01-snowy-january/assets/asphalt.bmp");
     glActiveTexture(GL_TEXTURE1);
     _grassTexture = uploadTexture("../01-snowy-january/assets/grass.bmp");
-    glActiveTexture(GL_TEXTURE3);
-    _asphaltTexture = uploadTexture("../01-snowy-january/assets/asphalt.bmp");
     glActiveTexture(GL_TEXTURE2);
+    _snowTexture = uploadTexture("../01-snowy-january/assets/snow.bmp");
+    glActiveTexture(GL_TEXTURE3);
     _maskTexture.loadTexture("../01-snowy-january/assets/level.png");
     _maskTexture.setPlaneSize(groundSize);
 
@@ -144,25 +146,6 @@ bool SnowyJanuary::Setup()
                        .Mass(0.0f)
                        .Build();
     _physics.AddObject(_floorObject);
-
-    _box.cubeTriangles()
-        .scale(glm::vec3(2.0f))
-        .fillColor(glm::vec4(0.0f, 0.3f, 0.5f, 1.0f))
-        .setup();
-
-    _boxObject1 = PhysicsObjectBuilder(_physics)
-                      .Box(glm::vec3(2.0f))
-                      .Mass(1.0f)
-                      .InitialPosition(glm::vec3(5.0f, 2.2f, 5.0f))
-                      .Build();
-    _physics.AddObject(_boxObject1);
-
-    _boxObject2 = PhysicsObjectBuilder(_physics)
-                      .Box(glm::vec3(2.0f))
-                      .Mass(1.0f)
-                      .InitialPosition(glm::vec3(8.0f, -1.2f, 2.0f))
-                      .Build();
-    _physics.AddObject(_boxObject2);
 
     _car.cubeTriangles()
         .scale(glm::vec3(1.0f, 2.0f, 1.0f))
@@ -318,7 +301,7 @@ void SnowyJanuary::Render()
         CapabilityGuard texture2d(GL_TEXTURE_2D, true);
 
         _floorShader.setupMatrices(_proj, _view, _floorObject->getMatrix());
-        _floorShader.setupTextures(_grassTexture, _asphaltTexture, _snowTexture, _maskTexture.textureId());
+        _floorShader.setupTextures(_asphaltTexture, _grassTexture, _snowTexture, _maskTexture.textureId());
         _floor.render();
     }
 
@@ -328,11 +311,6 @@ void SnowyJanuary::Render()
 
         // Select shader
         _boxShader.use();
-
-        _boxShader.setupMatrices(_proj, _view, _boxObject1->getMatrix());
-        _box.render();
-        _boxShader.setupMatrices(_proj, _view, _boxObject2->getMatrix());
-        _box.render();
 
         glFrontFace(GL_CW);
         _boxShader.setupMatrices(_proj, _view, _carObject->getMatrix());
