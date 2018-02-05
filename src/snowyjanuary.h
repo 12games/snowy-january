@@ -1,6 +1,9 @@
 #ifndef SNOWYJANUARY_H
 #define SNOWYJANUARY_H
 
+// This on before gl-color-normal-position-vertex.h to make sure the loadObj() is available
+#include "tiny_obj_loader.h"
+
 #include "game.h"
 #include "gl-color-normal-position-vertex.h"
 #include "gl-masked-textures.h"
@@ -16,7 +19,7 @@ enum class MenuModes
     KeyMappingMenu,
 };
 
-class SnowyJanuary : public Game
+class IcyFebruary : public Game
 {
     glm::mat4 _proj, _view;
     glm::vec3 _pos;
@@ -48,7 +51,7 @@ class SnowyJanuary : public Game
     unsigned int uploadTexture(std::string const &filename);
 
 public:
-    SnowyJanuary(int argc, char *argv[]);
+    IcyFebruary(int argc, char *argv[]);
 
     virtual bool Setup();
     virtual void Resize(int width, int height);

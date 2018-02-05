@@ -650,6 +650,72 @@ public:
         return (*this);
     }
 
+#ifdef TINY_OBJ_LOADER_H_
+
+    BufferType &loadObj(std::string const &filename, std::string const &materialPath, std::string const &shapeName)
+    {
+        tinyobj::attrib_t attrib;
+        std::vector<tinyobj::shape_t> shapes;
+        std::vector<tinyobj::material_t> materials;
+        std::string err;
+
+        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filename.c_str(), materialPath.c_str()))
+        {
+            std::cerr << "LoadObj failed" << std::endl;
+
+            return *this;
+        }
+
+        for (size_t s = 0; s < shapes.size(); s++)
+        {
+            if (shapes[s].name == shapeName)
+            {
+                // Loop over faces(polygon)
+                size_t index_offset = 0;
+                int faceCount = shapes[s].mesh.num_face_vertices.size();
+                for (int f = 0; f < faceCount; f++)
+                {
+                    if (materials.size() > 0 && shapes[s].mesh.material_ids[f] >= 0)
+                    {
+                        // per-face material
+                        auto m = materials[shapes[s].mesh.material_ids[f]];
+
+                        this->color(glm::vec4(m.diffuse[0], m.diffuse[1], m.diffuse[2], 1.0f));
+                    }
+
+                    int fv = shapes[s].mesh.num_face_vertices[f];
+
+                    // Loop over vertices in the face.
+                    for (size_t v = 0; v < fv; v++)
+                    {
+                        // access to vertex
+                        tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+                        tinyobj::real_t vx = attrib.vertices[3 * idx.vertex_index + 0];
+                        tinyobj::real_t vy = attrib.vertices[3 * idx.vertex_index + 1];
+                        tinyobj::real_t vz = attrib.vertices[3 * idx.vertex_index + 2];
+                        tinyobj::real_t nx = attrib.normals[3 * idx.normal_index + 0];
+                        tinyobj::real_t ny = attrib.normals[3 * idx.normal_index + 1];
+                        tinyobj::real_t nz = attrib.normals[3 * idx.normal_index + 2];
+                        // tinyobj::real_t tx = attrib.texcoords[2 * idx.texcoord_index + 0];
+                        // tinyobj::real_t ty = attrib.texcoords[2 * idx.texcoord_index + 1];
+                        // Optional: vertex colors
+                        // tinyobj::real_t red = attrib.colors[3*idx.vertex_index+0];
+                        // tinyobj::real_t green = attrib.colors[3*idx.vertex_index+1];
+                        // tinyobj::real_t blue = attrib.colors[3*idx.vertex_index+2];
+
+                        this->normal(glm::vec3(nx, ny, nz))
+                            .vertex(glm::vec3(vx, vy, vz));
+                    }
+                    index_offset += fv;
+                }
+            }
+        }
+
+        return *this;
+    }
+
+#endif
+
     bool setup()
     {
         return setup(_drawMode);

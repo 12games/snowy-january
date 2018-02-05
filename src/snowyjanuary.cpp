@@ -10,18 +10,16 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#include "tiny_obj_loader.h"
-
 #define KEYMAP_FILE "snowyjanuary.keymap"
 
 Game &Game::Instantiate(int argc, char *argv[])
 {
-    static SnowyJanuary game(argc, argv);
+    static IcyFebruary game(argc, argv);
 
     return game;
 }
 
-SnowyJanuary::SnowyJanuary(int argc, char *argv[])
+IcyFebruary::IcyFebruary(int argc, char *argv[])
     : _floor(_floorShader), _car(_boxShader), _truck(_boxShader),
       _wheelLeft(_boxShader), _wheelRight(_boxShader), _tree(_boxShader)
 {
@@ -29,7 +27,7 @@ SnowyJanuary::SnowyJanuary(int argc, char *argv[])
     _settingsDir = exe.Directory().FullName();
 }
 
-unsigned int SnowyJanuary::uploadTexture(std::string const &filename)
+unsigned int IcyFebruary::uploadTexture(std::string const &filename)
 {
     int x, y, comp;
     auto pixels = stbi_load(filename.c_str(), &x, &y, &comp, 3);
@@ -57,52 +55,7 @@ unsigned int SnowyJanuary::uploadTexture(std::string const &filename)
     return texture;
 }
 
-void fillFromObjShape(BufferType &buf, tinyobj::shape_t const &shape, tinyobj::attrib_t const &attrib, std::vector<tinyobj::material_t> const &materials)
-{
-    // Loop over faces(polygon)
-    size_t index_offset = 0;
-    int faceCount = shape.mesh.num_face_vertices.size();
-    for (int f = 0; f < faceCount; f++)
-    {
-        if (materials.size() > 0 && shape.mesh.material_ids[f] >= 0)
-        {
-            // per-face material
-            auto m = materials[shape.mesh.material_ids[f]];
-
-            buf.color(glm::vec4(m.diffuse[0], m.diffuse[1], m.diffuse[2], 1.0f));
-        }
-
-        int fv = shape.mesh.num_face_vertices[f];
-
-        // Loop over vertices in the face.
-        for (size_t v = 0; v < fv; v++)
-        {
-            // access to vertex
-            tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
-            tinyobj::real_t vx = attrib.vertices[3 * idx.vertex_index + 0];
-            tinyobj::real_t vy = attrib.vertices[3 * idx.vertex_index + 1];
-            tinyobj::real_t vz = attrib.vertices[3 * idx.vertex_index + 2];
-            tinyobj::real_t nx = attrib.normals[3 * idx.normal_index + 0];
-            tinyobj::real_t ny = attrib.normals[3 * idx.normal_index + 1];
-            tinyobj::real_t nz = attrib.normals[3 * idx.normal_index + 2];
-            //                tinyobj::real_t tx = attrib.texcoords[2 * idx.texcoord_index + 0];
-            //                tinyobj::real_t ty = attrib.texcoords[2 * idx.texcoord_index + 1];
-            // Optional: vertex colors
-            // tinyobj::real_t red = attrib.colors[3*idx.vertex_index+0];
-            // tinyobj::real_t green = attrib.colors[3*idx.vertex_index+1];
-            // tinyobj::real_t blue = attrib.colors[3*idx.vertex_index+2];
-
-            buf.normal(glm::vec3(nx, ny, nz))
-                .vertex(glm::vec3(vx, vy, vz));
-        }
-        index_offset += fv;
-    }
-
-    buf.scale(glm::vec3(0.2f))
-        .setup(GL_TRIANGLES);
-}
-
-bool SnowyJanuary::Setup()
+bool IcyFebruary::Setup()
 {
     _camOffset[0] = _camOffset[1] = _camOffset[2] = 5.0f;
 
@@ -159,49 +112,21 @@ bool SnowyJanuary::Setup()
                      .BuildCar();
     _physics.AddObject(_carObject);
 
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::string err;
+    _truck.loadObj("../01-snowy-january/assets/mini-dozer.obj", "../01-snowy-january/assets/", "Truck_Center")
+        .scale(glm::vec3(0.2f))
+        .setup(GL_TRIANGLES);
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "../01-snowy-january/assets/mini-dozer.obj", "../01-snowy-january/assets/"))
-    {
-        std::cerr << "LoadObj failed" << std::endl;
+    _wheelLeft.loadObj("../01-snowy-january/assets/mini-dozer.obj", "../01-snowy-january/assets/", "Wheel.001_Left")
+        .scale(glm::vec3(0.2f))
+        .setup(GL_TRIANGLES);
 
-        return false;
-    }
+    _wheelRight.loadObj("../01-snowy-january/assets/mini-dozer.obj", "../01-snowy-january/assets/", "Wheel.000_Right")
+        .scale(glm::vec3(0.2f))
+        .setup(GL_TRIANGLES);
 
-    for (size_t s = 0; s < shapes.size(); s++)
-    {
-        if (shapes[s].name == "Truck_Center")
-        {
-            fillFromObjShape(_truck, shapes[s], attrib, materials);
-        }
-        if (shapes[s].name == "Wheel.001_Left")
-        {
-            fillFromObjShape(_wheelLeft, shapes[s], attrib, materials);
-        }
-        if (shapes[s].name == "Wheel.000_Right")
-        {
-            fillFromObjShape(_wheelRight, shapes[s], attrib, materials);
-        }
-    }
-
-    tinyobj::attrib_t attrib_tree;
-    std::vector<tinyobj::shape_t> shapes_tree;
-    std::vector<tinyobj::material_t> materials_tree;
-
-    if (!tinyobj::LoadObj(&attrib_tree, &shapes_tree, &materials_tree, &err, "../01-snowy-january/assets/tree.obj", "../01-snowy-january/assets/"))
-    {
-        std::cerr << "LoadObj failed" << std::endl;
-
-        return false;
-    }
-
-    for (size_t s = 0; s < shapes_tree.size(); s++)
-    {
-        fillFromObjShape(_tree, shapes_tree[s], attrib_tree, materials_tree);
-    }
+    _tree.loadObj("../01-snowy-january/assets/tree.obj", "../01-snowy-january/assets/", "Cylinder")
+        .scale(glm::vec3(0.2f))
+        .setup(GL_TRIANGLES);
 
     _treeLocations = _maskTexture.listBluePixels();
 
@@ -224,7 +149,7 @@ bool SnowyJanuary::Setup()
     return true;
 }
 
-void SnowyJanuary::Resize(int width, int height)
+void IcyFebruary::Resize(int width, int height)
 {
     _width = width;
     _height = height;
@@ -234,7 +159,7 @@ void SnowyJanuary::Resize(int width, int height)
     _view = glm::lookAt(_pos + glm::vec3(5.0f, 5.0f, 0.0f), _pos, glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
-void SnowyJanuary::Update(int dt)
+void IcyFebruary::Update(int dt)
 {
     if (_menuMode != MenuModes::NoMenu)
     {
@@ -287,7 +212,7 @@ void SnowyJanuary::Update(int dt)
 
 static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-void SnowyJanuary::Render()
+void IcyFebruary::Render()
 {
     glViewport(0, 0, _width, _height);
 
@@ -339,7 +264,7 @@ void SnowyJanuary::Render()
     //_physics.DebugDraw(_proj, _view);
 }
 
-void SnowyJanuary::RenderUi()
+void IcyFebruary::RenderUi()
 {
     static bool show_gui = true;
 
@@ -434,6 +359,6 @@ void SnowyJanuary::RenderUi()
     }
 }
 
-void SnowyJanuary::Destroy()
+void IcyFebruary::Destroy()
 {
 }
