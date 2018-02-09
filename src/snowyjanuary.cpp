@@ -194,11 +194,11 @@ void IcyFebruary::Update(int dt)
 
     if (_userInput.ActionState(UserInputActions::SteerLeft))
     {
-        _carObject->Steer(0.01f);
+        _carObject->Steer(0.005f);
     }
     else if (_userInput.ActionState(UserInputActions::SteerRight))
     {
-        _carObject->Steer(-0.01f);
+        _carObject->Steer(-0.005f);
     }
 
     if (_userInput.ActionState(UserInputActions::Brake))
