@@ -1,15 +1,29 @@
 cmake_minimum_required(VERSION 3.7)
 
 project(snowy-january)
+include(cmake/StandardProjectSettings.cmake)
 
-list(APPEND CMAKE_PREFIX_PATH "$ENV{userprofile}/.cpppm/install")
+# Link this 'library' to set the c++ standard / compile-time options requested
+add_library(project_options INTERFACE)
+target_compile_features(project_options INTERFACE cxx_std_17)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_PREFIX_PATH}/cmake)
+set(CONAN_EXTRA_REQUIRES "")
+set(CONAN_EXTRA_OPTIONS "")
 
-find_package(SDL2 REQUIRED)
-find_package(BULLET REQUIRED)
-find_package(OPENGL REQUIRED)
-find_package(GLM REQUIRED)
+set(CONAN_EXTRA_REQUIRES ${CONAN_EXTRA_REQUIRES}
+                           sdl2/2.0.12@bincrafters/stable)
+
+set(CONAN_EXTRA_REQUIRES ${CONAN_EXTRA_REQUIRES}
+                           glm/0.9.9.5@g-truc/stable)
+
+set(CONAN_EXTRA_REQUIRES ${CONAN_EXTRA_REQUIRES}
+                          bullet3/2.88@bincrafters/stable)
+
+include(cmake/Conan.cmake)
+run_conan()
+
+### Find OpenGL
+find_package(OpenGL REQUIRED)
 
 add_executable(snowy-january
     README.md
@@ -54,10 +68,10 @@ target_include_directories(snowy-january
     )
 
 target_link_libraries(snowy-january
-    SDL2::SDL2-static
     ${OPENGL_LIBRARIES}
-    ${BULLET_LIBRARIES}
-    )
+    CONAN_PKG::sdl2
+    CONAN_PKG::glm
+    CONAN_PKG::bullet3)
 
 target_compile_features(snowy-january
     PRIVATE cxx_auto_type
