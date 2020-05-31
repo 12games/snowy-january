@@ -4,6 +4,7 @@
 // This on before gl-color-normal-position-vertex.h to make sure the loadObj() is available
 #include "tiny_obj_loader.h"
 
+#include "audio.h"
 #include "game.h"
 #include "gl-color-normal-position-vertex.h"
 #include "gl-masked-textures.h"
@@ -19,7 +20,7 @@ enum class MenuModes
     KeyMappingMenu,
 };
 
-class IcyFebruary : public Game
+class SnowyJanuary : public Game
 {
     glm::mat4 _proj, _view;
     glm::vec3 _pos;
@@ -41,6 +42,8 @@ class IcyFebruary : public Game
     unsigned int _grassTexture;
     unsigned int _asphaltTexture;
     UpdatingTexture _maskTexture;
+    Audio *_toeter;
+    Audio *_engineStart;
 
     PhysicsManager _physics;
     PhysicsObject *_floorObject;
@@ -51,7 +54,7 @@ class IcyFebruary : public Game
     unsigned int uploadTexture(std::string const &filename);
 
 public:
-    IcyFebruary(int argc, char *argv[]);
+    SnowyJanuary(int argc, char *argv[]);
 
     virtual bool Setup();
     virtual void Resize(int width, int height);

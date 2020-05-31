@@ -14,20 +14,20 @@
 
 Game &Game::Instantiate(int argc, char *argv[])
 {
-    static IcyFebruary game(argc, argv);
+    static SnowyJanuary game(argc, argv);
 
     return game;
 }
 
-IcyFebruary::IcyFebruary(int argc, char *argv[])
-    : _floor(_floorShader), _car(_boxShader), _truck(_boxShader),
+SnowyJanuary::SnowyJanuary(int argc, char *argv[])
+    : _menuMode(MenuModes::NoMenu), _floor(_floorShader), _car(_boxShader), _truck(_boxShader),
       _wheelLeft(_boxShader), _wheelRight(_boxShader), _tree(_boxShader)
 {
     System::IO::FileInfo exe(argv[0]);
     _settingsDir = exe.Directory().FullName();
 }
 
-unsigned int IcyFebruary::uploadTexture(std::string const &filename)
+unsigned int SnowyJanuary::uploadTexture(std::string const &filename)
 {
     int x, y, comp;
     auto pixels = stbi_load(filename.c_str(), &x, &y, &comp, 3);
@@ -55,7 +55,7 @@ unsigned int IcyFebruary::uploadTexture(std::string const &filename)
     return texture;
 }
 
-bool IcyFebruary::Setup()
+bool SnowyJanuary::Setup()
 {
     _camOffset[0] = _camOffset[1] = _camOffset[2] = 5.0f;
 
@@ -74,7 +74,7 @@ bool IcyFebruary::Setup()
     _maskTexture.setPlaneSize(groundSize);
 
     ImGuiIO &io = ImGui::GetIO();
-    ImFont *font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\tahoma.ttf", 18.0f, NULL);
+    io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\tahoma.ttf", 18.0f, NULL);
 
     ImGuiStyle &style = ImGui::GetStyle();
     style.WindowRounding = 0.0f;
@@ -128,6 +128,9 @@ bool IcyFebruary::Setup()
         .scale(glm::vec3(0.2f))
         .setup(GL_TRIANGLES);
 
+    _toeter = createAudio("assets/sounds/toeter.wav", 0, SDL_MIX_MAXVOLUME / 2);
+    _engineStart = createAudio("assets/sounds/engine-start.wav", 0, SDL_MIX_MAXVOLUME / 2);
+
     _treeLocations = _maskTexture.listBluePixels();
 
     auto builder = PhysicsObjectBuilder(_physics)
@@ -149,7 +152,7 @@ bool IcyFebruary::Setup()
     return true;
 }
 
-void IcyFebruary::Resize(int width, int height)
+void SnowyJanuary::Resize(int width, int height)
 {
     _width = width;
     _height = height;
@@ -159,7 +162,7 @@ void IcyFebruary::Resize(int width, int height)
     _view = glm::lookAt(_pos + glm::vec3(5.0f, 5.0f, 0.0f), _pos, glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
-void IcyFebruary::Update(int dt)
+void SnowyJanuary::Update(int dt)
 {
     if (_menuMode != MenuModes::NoMenu)
     {
@@ -174,36 +177,52 @@ void IcyFebruary::Update(int dt)
     _pos = glm::vec3(_carObject->getMatrix()[3].x, _carObject->getMatrix()[3].y, 0.0f);
     _view = glm::lookAt(_pos + glm::vec3(_camOffset[0], _camOffset[1], _camOffset[2]), _pos, glm::vec3(0.0f, 0.0f, 1.0f));
 
-    if (_userInput.ActionState(UserInputActions::StartEngine))
+    while (!_userInput.Events().empty())
     {
-        _carObject->StartEngine();
-    }
-    else if (_userInput.ActionState(UserInputActions::StopEngine))
-    {
-        _carObject->StopEngine();
-    }
+        auto e = _userInput.Events().back();
 
-    if (_userInput.ActionState(UserInputActions::SpeedUp))
-    {
-        _carObject->ChangeSpeed(1.0f);
-    }
-    else if (_userInput.ActionState(UserInputActions::SpeedDown))
-    {
-        _carObject->ChangeSpeed(-1.0f);
-    }
+        if (e.action == UserInputActions::StartEngine && e.newState)
+        {
+            _carObject->StartEngine();
+            playSoundFromMemory(_engineStart, SDL_MIX_MAXVOLUME / 2);
+        }
 
-    if (_userInput.ActionState(UserInputActions::SteerLeft))
-    {
-        _carObject->Steer(0.005f);
-    }
-    else if (_userInput.ActionState(UserInputActions::SteerRight))
-    {
-        _carObject->Steer(-0.005f);
-    }
+        if (e.action == UserInputActions::StopEngine && e.newState)
+        {
+            _carObject->StopEngine();
+        }
 
-    if (_userInput.ActionState(UserInputActions::Brake))
-    {
-        _carObject->Brake();
+        if (e.action == UserInputActions::SpeedUp && e.newState)
+        {
+            _carObject->ChangeSpeed(10.0f);
+        }
+
+        if (e.action == UserInputActions::SpeedDown && e.newState)
+        {
+            _carObject->ChangeSpeed(-10.0f);
+        }
+
+        if (e.action == UserInputActions::SteerLeft && e.newState)
+        {
+            _carObject->Steer(0.005f);
+        }
+
+        if (e.action == UserInputActions::SteerRight && e.newState)
+        {
+            _carObject->Steer(-0.005f);
+        }
+
+        if (e.action == UserInputActions::Brake && e.newState)
+        {
+            _carObject->Brake();
+        }
+
+        if (e.action == UserInputActions::Action && e.newState)
+        {
+            playSoundFromMemory(_toeter, SDL_MIX_MAXVOLUME / 2);
+        }
+
+        _userInput.Events().pop();
     }
 
     _carObject->Update();
@@ -212,7 +231,7 @@ void IcyFebruary::Update(int dt)
 
 static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-void IcyFebruary::Render()
+void SnowyJanuary::Render()
 {
     glViewport(0, 0, _width, _height);
 
@@ -264,7 +283,7 @@ void IcyFebruary::Render()
     //_physics.DebugDraw(_proj, _view);
 }
 
-void IcyFebruary::RenderUi()
+void SnowyJanuary::RenderUi()
 {
     static bool show_gui = true;
 
@@ -272,18 +291,26 @@ void IcyFebruary::RenderUi()
 
     if (_menuMode == MenuModes::NoMenu)
     {
-        ImGui::Begin("Settings", &show_gui, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings);
+        ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings);
         {
             ImGui::SetWindowPos(ImVec2(0, 0));
-//            ImGui::SetWindowSize(ImVec2(160, 64));
+            // ImGui::SetWindowSize(ImVec2(160, 64));
             ImGui::SetWindowSize(ImVec2(panelWidth, _height));
             if (ImGui::Button("Pause", ImVec2(120, 36)))
             {
                 _menuMode = MenuModes::MainMenu;
             }
-            ImGui::SliderFloat("Cam X", &(_camOffset[0]), -5.0f, 5.0f);
-            ImGui::SliderFloat("Cam Y", &(_camOffset[1]), -5.0f, 5.0f);
-            ImGui::SliderFloat("Cam Z", &(_camOffset[2]), -5.0f, 5.0f);
+            bool isStarted = _carObject->EngineIstarted();
+            ImGui::Checkbox("Engine started", &isStarted);
+
+            ImGui::Text("Speed %04f", _carObject->Speed());
+
+            float steering = _carObject->Steering();
+            if (ImGui::SliderFloat("steering", &steering, -0.3f, 0.3f))
+            {
+                _carObject->Steer(steering - _carObject->Steering());
+            }
+
             ImGui::End();
         }
         return;
@@ -307,6 +334,10 @@ void IcyFebruary::RenderUi()
                 }
 
                 ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
+
+                ImGui::SliderFloat("Cam X", &(_camOffset[0]), -5.0f, 5.0f);
+                ImGui::SliderFloat("Cam Y", &(_camOffset[1]), -5.0f, 5.0f);
+                ImGui::SliderFloat("Cam Z", &(_camOffset[2]), -5.0f, 5.0f);
             }
             if (_menuMode == MenuModes::KeyMappingMenu)
             {
@@ -342,7 +373,7 @@ void IcyFebruary::RenderUi()
                             ImGui::Text("or");
                             ImGui::SameLine();
                         }
-                        ImGui::Text(e.toString());
+                        ImGui::Text("%s", e.toString());
                         ImGui::SameLine();
                         first = false;
                     }
@@ -359,6 +390,6 @@ void IcyFebruary::RenderUi()
     }
 }
 
-void IcyFebruary::Destroy()
+void SnowyJanuary::Destroy()
 {
 }

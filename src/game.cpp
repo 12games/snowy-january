@@ -1,13 +1,15 @@
 #include "game.h"
-#include <thread>
-#include <mutex>
 #include <fstream>
-#include <sstream>
 #include <iostream>
+#include <mutex>
+#include <sstream>
+#include <thread>
 
 static std::mutex mappingsMutex;
 
-bool operator < (UserInputEvent const &a, UserInputEvent const &b)
+bool operator<(
+    UserInputMapping const &a,
+    UserInputMapping const &b)
 {
     if (a.source == b.source)
     {
@@ -17,15 +19,17 @@ bool operator < (UserInputEvent const &a, UserInputEvent const &b)
     return a.source < b.source;
 }
 
-void UserInput::StartMappingAction(UserInputActions action)
+void UserInput::StartMappingAction(
+    UserInputActions action)
 {
     _mappingMode = true;
     _actionToMap = action;
 }
 
-std::vector<UserInputEvent> UserInput::GetMappedActionEvents(UserInputActions action)
+std::vector<UserInputMapping> UserInput::GetMappedActionEvents(
+    UserInputActions action)
 {
-    std::vector<UserInputEvent> result;
+    std::vector<UserInputMapping> result;
 
     for (auto pair : _stateMapping)
     {
@@ -38,8 +42,32 @@ std::vector<UserInputEvent> UserInput::GetMappedActionEvents(UserInputActions ac
     return result;
 }
 
-void UserInput::ProcessEvent(UserInputEvent const &event, bool state)
+void UserInput::StartUsingQueuedEvents()
 {
+    mappingsMutex.lock();
+}
+
+std::queue<UserInputEvent> &UserInput::Events()
+{
+    return _stateEvents;
+}
+
+void UserInput::EndUsingQueuedEvents()
+{
+    while (!_stateEvents.empty())
+    {
+        _stateEvents.pop();
+    }
+
+    mappingsMutex.unlock();
+}
+
+void UserInput::ProcessEvent(
+    UserInputMapping const &event,
+    bool state)
+{
+    std::lock_guard<std::mutex> lock(mappingsMutex);
+
     if (_mappingMode)
     {
         if (state)
@@ -47,8 +75,6 @@ void UserInput::ProcessEvent(UserInputEvent const &event, bool state)
             // We only change mappings on the release of a button
             return;
         }
-
-        std::lock_guard<std::mutex> lock(mappingsMutex);
 
         auto mapping = _stateMapping.find(event);
         if (mapping == _stateMapping.end())
@@ -72,15 +98,17 @@ void UserInput::ProcessEvent(UserInputEvent const &event, bool state)
 
     if (_actionStates.find(mapping->second) == _actionStates.end())
     {
-        std::lock_guard<std::mutex> lock(mappingsMutex);
-
         _actionStates.insert(std::make_pair(mapping->second, false));
     }
 
     _actionStates[mapping->second] = state;
+
+    UserInputEvent e = {mapping->second, state};
+    _stateEvents.push(e);
 }
 
-bool UserInput::ActionState(UserInputActions action)
+bool UserInput::ActionState(
+    UserInputActions action)
 {
     if (_actionStates.find(action) == _actionStates.end())
     {
@@ -90,7 +118,8 @@ bool UserInput::ActionState(UserInputActions action)
     return _actionStates[action];
 }
 
-void UserInput::ReadKeyMappings(std::string const &filename)
+void UserInput::ReadKeyMappings(
+    std::string const &filename)
 {
     // we are threading this to make sure it will not freeze the menu or something
     std::thread t([this, filename]() {
@@ -125,7 +154,7 @@ void UserInput::ReadKeyMappings(std::string const &filename)
                 }
             }
 
-            UserInputEvent uie = { source, key };
+            UserInputMapping uie = {source, key};
             _stateMapping.insert(std::make_pair(uie, enumAction));
         }
 
@@ -135,7 +164,8 @@ void UserInput::ReadKeyMappings(std::string const &filename)
     t.detach();
 }
 
-void UserInput::WriteKeyMappings(std::string const &filename)
+void UserInput::WriteKeyMappings(
+    std::string const &filename)
 {
     // we are threading this to make sure it will not freeze the menu or something
     std::thread t([this, filename]() {

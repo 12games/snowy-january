@@ -7,6 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
+#include <iostream>
 
 class ImplPhysicsObject : public btMotionState, public PhysicsObject
 {
@@ -14,11 +15,11 @@ public:
     glm::mat4 _matrix;
     btRigidBody *_rigidBody;
 
-    void getWorldTransform(btTransform &worldTrans) const;
-    void setWorldTransform(const btTransform &worldTrans);
+    void getWorldTransform(btTransform &worldTrans) const override;
+    void setWorldTransform(const btTransform &worldTrans) override;
 
-    virtual glm::mat4 const &getMatrix() const;
-    virtual class btRigidBody *getRigidBody();
+    virtual glm::mat4 const &getMatrix() const override;
+    virtual class btRigidBody *getRigidBody() override;
 };
 
 void ImplPhysicsObject::getWorldTransform(btTransform &worldTrans) const
@@ -41,7 +42,9 @@ btRigidBody *ImplPhysicsObject::getRigidBody()
     return _rigidBody;
 }
 
-class CarPhysicsObject : public CarObject, public ImplPhysicsObject
+class CarPhysicsObject :
+    public CarObject,
+    public ImplPhysicsObject
 {
     const float MIN_SPEED = -50.0f;
     const float MAX_SPEED = 100.0f;
@@ -61,26 +64,32 @@ public:
 
     void SetVehicle(btRaycastVehicle *vehicle, btDefaultVehicleRaycaster *vehicleRayCaster);
 
-    virtual void Update();
-    virtual void StartEngine();
-    virtual void ChangeSpeed(float amount);
-    virtual void Steer(float amount);
-    virtual void Brake();
-    virtual void StopEngine();
+    virtual void Update() override;
+    virtual bool EngineIstarted() override;
+    virtual void StartEngine() override;
+    virtual void ChangeSpeed(float amount) override;
+    virtual void Steer(float amount) override;
+    virtual void Brake() override;
+    virtual void StopEngine() override;
 
-    virtual float Speed() const;
-    virtual float Steering() const;
+    virtual float Speed() const override;
+    virtual float Steering() const override;
 
-    void setWorldTransform(const btTransform &worldTrans);
+    void setWorldTransform(const btTransform &worldTrans) override;
 
-    virtual glm::mat4 const &getMatrix() const;
-    virtual class btRigidBody *getRigidBody();
+    virtual glm::mat4 const &getMatrix() const override;
+    virtual class btRigidBody *getRigidBody() override;
 
-    virtual glm::mat4 const &getWheelMatrix(int wheel) const;
+    virtual glm::mat4 const &getWheelMatrix(int wheel) const override;
 };
 
 CarPhysicsObject::CarPhysicsObject()
-    : _engineStarted(false), _speed(0.0f), _steering(0.0f), _brakeNextUpdate(false)
+    : _engineStarted(false),
+      _speed(0.0f),
+      _steering(0.0f),
+      _brakeNextUpdate(false),
+      _vehicle(nullptr),
+      _vehicleRayCaster(nullptr)
 {
     _wheelMatrix[0] = glm::mat4(1.0f);
     _wheelMatrix[1] = glm::mat4(1.0f);
@@ -121,8 +130,8 @@ void CarPhysicsObject::Update()
         _brakeNextUpdate = false;
     }
 
-    _vehicle->applyEngineForce(_speed, 3);
     _vehicle->applyEngineForce(_speed, 2);
+    _vehicle->applyEngineForce(_speed, 3);
 
     _vehicle->setSteeringValue(_steering, 1);
     _vehicle->setSteeringValue(_steering, 0);
@@ -133,6 +142,11 @@ void CarPhysicsObject::Update()
 
         info.m_worldTransform.getOpenGLMatrix(glm::value_ptr(_wheelMatrix[i]));
     }
+}
+
+bool CarPhysicsObject::EngineIstarted()
+{
+    return _engineStarted;
 }
 
 void CarPhysicsObject::StartEngine()
@@ -225,11 +239,11 @@ btRigidBody *CarPhysicsObject::getRigidBody()
 }
 
 PhysicsObjectBuilder::PhysicsObjectBuilder(PhysicsManager &manager)
-    : _manager(manager)
+    : _manager(manager),
+      _initialPos(glm::vec3(0.0f)),
+      _initialRot(glm::toQuat(glm::mat4(1.0f)))
 {
     _shape = nullptr;
-    _initialPos = glm::vec3(0.0f);
-    _initialRot = glm::toQuat(glm::mat4(1.0f));
     _mass = 0;
     _friction = 0.1f;
     _linearDamping = 0.9f;
@@ -291,11 +305,6 @@ void addWheels(
     vehicle->addWheel(wheelConnectionPoint * btVector3(1, -1, 1), wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, false);
     vehicle->addWheel(wheelConnectionPoint * btVector3(-1, -1, 1), wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, false);
 
-    btVector3 p2(wheelConnectionPoint);
-    btVector3 p3(wheelConnectionPoint * btVector3(-1, 1, 1));
-    btVector3 p4(wheelConnectionPoint * btVector3(1, -1, 1));
-    btVector3 p5(wheelConnectionPoint * btVector3(-1, -1, 1));
-
     //Configures each wheel of our vehicle, setting its friction, damping compression, etc.
     for (int i = 0; i < vehicle->getNumWheels(); i++)
     {
@@ -328,12 +337,8 @@ CarObject *PhysicsObjectBuilder::BuildCar()
     obj->_rigidBody = new btRigidBody(rbInfo);
     obj->_rigidBody->setActivationState(DISABLE_DEACTIVATION);
 
-    float wheelRadius = 0.5f;
-    float wheelWidth = 0.4f;
-    float connectionHeight = 1.2f;
     btVector3 wheelDir(0, -1, 0);
     btVector3 wheelAxle(-1, 0, 0);
-    btScalar suspensionRestLength(0.6f);
     btRaycastVehicle::btVehicleTuning _tuning;
 
     auto vehicleRayCaster = new btDefaultVehicleRaycaster(_manager._dynamicsWorld);

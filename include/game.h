@@ -2,6 +2,7 @@
 #define GAME_H
 
 #include <map>
+#include <queue>
 #include <string>
 #include <vector>
 
@@ -14,6 +15,7 @@ enum class UserInputActions
     SteerLeft,
     SteerRight,
     Brake,
+    Action,
 
     Count
 };
@@ -26,9 +28,10 @@ static const char *UserInputActionNames[] = {
     "SteerLeft",
     "SteerRight",
     "Brake",
+    "Action",
 };
 
-struct UserInputEvent
+struct UserInputMapping
 {
     unsigned int source;
     int key;
@@ -36,19 +39,29 @@ struct UserInputEvent
     char const *toString();
 };
 
+struct UserInputEvent
+{
+    UserInputActions action;
+    bool newState;
+};
+
 class UserInput
 {
     std::map<UserInputActions, bool> _actionStates;
-    std::map<UserInputEvent, UserInputActions> _stateMapping;
+    std::map<UserInputMapping, UserInputActions> _stateMapping;
+    std::queue<UserInputEvent> _stateEvents;
 
 public:
     bool _mappingMode;
     UserInputActions _actionToMap;
 
     void StartMappingAction(UserInputActions action);
-    std::vector<UserInputEvent> GetMappedActionEvents(UserInputActions action);
+    std::vector<UserInputMapping> GetMappedActionEvents(UserInputActions action);
 
-    void ProcessEvent(UserInputEvent const &event, bool state);
+    void ProcessEvent(UserInputMapping const &event, bool state);
+    void StartUsingQueuedEvents();
+    std::queue<UserInputEvent> &Events();
+    void EndUsingQueuedEvents();
 
     bool ActionState(UserInputActions action);
 

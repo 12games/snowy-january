@@ -10,48 +10,58 @@ PhysicsManager::Config PhysicsManager::_config = {9.81f};
 PhysicsManager::PhysicsManager()
     : _drawer(nullptr)
 {
-    this->_broadphase = new btDbvtBroadphase();
+    _broadphase = new btDbvtBroadphase();
 
-    this->_collisionConfiguration = new btDefaultCollisionConfiguration();
-    this->_dispatcher = new btCollisionDispatcher(this->_collisionConfiguration);
+    _collisionConfiguration = new btDefaultCollisionConfiguration();
+    _dispatcher = new btCollisionDispatcher(_collisionConfiguration);
 
-    this->_solver = new btSequentialImpulseConstraintSolver();
+    _solver = new btSequentialImpulseConstraintSolver();
 
-    this->_dynamicsWorld = new btDiscreteDynamicsWorld(this->_dispatcher, this->_broadphase, this->_solver, this->_collisionConfiguration);
-    this->_dynamicsWorld->setGravity(btVector3(0, 0, -PhysicsManager::_config._gravity));
+    _dynamicsWorld = new btDiscreteDynamicsWorld(_dispatcher, _broadphase, _solver, _collisionConfiguration);
+    _dynamicsWorld->setGravity(btVector3(0, 0, -PhysicsManager::_config._gravity));
 }
 
 PhysicsManager::~PhysicsManager()
 {
-    if (this->_dynamicsWorld != 0)
-        delete this->_dynamicsWorld;
-    this->_dynamicsWorld = 0;
+    if (_dynamicsWorld != nullptr)
+    {
+        delete _dynamicsWorld;
+    }
+    _dynamicsWorld = nullptr;
 
-    if (this->_solver != 0)
-        delete this->_solver;
-    this->_solver = 0;
+    if (_solver != nullptr)
+    {
+        delete _solver;
+    }
+    _solver = nullptr;
 
-    if (this->_dispatcher != 0)
-        delete this->_dispatcher;
-    this->_dispatcher = 0;
+    if (_dispatcher != nullptr)
+    {
+        delete _dispatcher;
+    }
+    _dispatcher = nullptr;
 
-    if (this->_collisionConfiguration != 0)
-        delete this->_collisionConfiguration;
-    this->_collisionConfiguration = 0;
+    if (_collisionConfiguration != nullptr)
+    {
+        delete _collisionConfiguration;
+    }
+    _collisionConfiguration = nullptr;
 
-    if (this->_broadphase != 0)
-        delete this->_broadphase;
-    this->_broadphase = 0;
+    if (_broadphase != nullptr)
+    {
+        delete _broadphase;
+    }
+    _broadphase = nullptr;
 }
 
 void PhysicsManager::Step(float gameTime)
 {
-    this->_dynamicsWorld->stepSimulation(gameTime, 1);
-    int numManifolds = this->_dynamicsWorld->getDispatcher()->getNumManifolds();
+    _dynamicsWorld->stepSimulation(gameTime, 1);
+    int numManifolds = _dynamicsWorld->getDispatcher()->getNumManifolds();
 
     for (int i = 0; i < numManifolds; i++)
     {
-        btPersistentManifold *contactManifold = this->_dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
+        btPersistentManifold *contactManifold = _dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
 
         if (contactManifold->getNumContacts() <= 0) continue;
 
@@ -64,9 +74,9 @@ void PhysicsManager::Step(float gameTime)
         //        auto entityB = static_cast<GameObject *>(contactManifold->getBody1()->getUserPointer());
         //        if (entityB == nullptr) continue;
 
-        //        for (auto handler : this->_collisionHandlers)
+        //        for (auto handler : _collisionHandlers)
         //            handler->handleCollision(entityA, entityB);
-        //        this->_collisionHandlers->handleCollision(entityA, entityB);
+        //        _collisionHandlers->handleCollision(entityA, entityB);
         //        contactManifold->clearManifold();
     }
 }
@@ -78,7 +88,7 @@ void PhysicsManager::AddObject(PhysicsObject *obj, short group, short mask)
         return;
     }
 
-    this->_dynamicsWorld->addRigidBody(obj->getRigidBody(), group, mask);
+    _dynamicsWorld->addRigidBody(obj->getRigidBody(), group, mask);
 }
 
 void PhysicsManager::RemoveObject(PhysicsObject *obj)
@@ -88,5 +98,5 @@ void PhysicsManager::RemoveObject(PhysicsObject *obj)
         return;
     }
 
-    this->_dynamicsWorld->removeCollisionObject(obj->getRigidBody());
+    _dynamicsWorld->removeCollisionObject(obj->getRigidBody());
 }

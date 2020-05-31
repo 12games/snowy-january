@@ -41,6 +41,7 @@ add_executable(snowy-january
     lib/imgui/imgui.h
     lib/imgui/imgui_draw.cpp
     src/game.cpp
+    src/audio.c
     src/program.cpp
     src/glad.c
     src/snowyjanuary.cpp
