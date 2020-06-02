@@ -177,53 +177,46 @@ void SnowyJanuary::Update(int dt)
     _pos = glm::vec3(_carObject->getMatrix()[3].x, _carObject->getMatrix()[3].y, 0.0f);
     _view = glm::lookAt(_pos + glm::vec3(_camOffset[0], _camOffset[1], _camOffset[2]), _pos, glm::vec3(0.0f, 0.0f, 1.0f));
 
-    while (!_userInput.Events().empty())
-    {
-        auto e = _userInput.Events().back();
-
-        if (e.action == UserInputActions::StartEngine && e.newState)
+        if (_userInput.ActionState(UserInputActions::StartEngine))
         {
             _carObject->StartEngine();
             playSoundFromMemory(_engineStart, SDL_MIX_MAXVOLUME / 2);
         }
 
-        if (e.action == UserInputActions::StopEngine && e.newState)
+        if (_userInput.ActionState(UserInputActions::StopEngine))
         {
             _carObject->StopEngine();
         }
 
-        if (e.action == UserInputActions::SpeedUp && e.newState)
+        if (_userInput.ActionState(UserInputActions::SpeedUp))
         {
-            _carObject->ChangeSpeed(10.0f);
+            _carObject->ChangeSpeed(1.0f);
         }
 
-        if (e.action == UserInputActions::SpeedDown && e.newState)
+        if (_userInput.ActionState(UserInputActions::SpeedDown))
         {
-            _carObject->ChangeSpeed(-10.0f);
+            _carObject->ChangeSpeed(-1.0f);
         }
 
-        if (e.action == UserInputActions::SteerLeft && e.newState)
+        if (_userInput.ActionState(UserInputActions::SteerLeft))
         {
             _carObject->Steer(0.005f);
         }
 
-        if (e.action == UserInputActions::SteerRight && e.newState)
+        if (_userInput.ActionState(UserInputActions::SteerRight))
         {
             _carObject->Steer(-0.005f);
         }
 
-        if (e.action == UserInputActions::Brake && e.newState)
+        if (_userInput.ActionState(UserInputActions::Brake))
         {
             _carObject->Brake();
         }
 
-        if (e.action == UserInputActions::Action && e.newState)
+        if (_userInput.ActionState(UserInputActions::Action))
         {
             playSoundFromMemory(_toeter, SDL_MIX_MAXVOLUME / 2);
         }
-
-        _userInput.Events().pop();
-    }
 
     _carObject->Update();
     _physics.Step(dt / 1000.0f);
@@ -299,6 +292,10 @@ void SnowyJanuary::RenderUi()
             if (ImGui::Button("Pause", ImVec2(120, 36)))
             {
                 _menuMode = MenuModes::MainMenu;
+            }
+            if (ImGui::Button("Reset", ImVec2(120, 36)))
+            {
+                _carObject->
             }
             bool isStarted = _carObject->EngineIstarted();
             ImGui::Checkbox("Engine started", &isStarted);

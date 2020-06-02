@@ -2,7 +2,6 @@
 #define GAME_H
 
 #include <map>
-#include <queue>
 #include <string>
 #include <vector>
 
@@ -49,7 +48,7 @@ class UserInput
 {
     std::map<UserInputActions, bool> _actionStates;
     std::map<UserInputMapping, UserInputActions> _stateMapping;
-    std::queue<UserInputEvent> _stateEvents;
+    std::vector<UserInputEvent> _stateEventsSinceLastUpdate;
 
 public:
     bool _mappingMode;
@@ -60,7 +59,6 @@ public:
 
     void ProcessEvent(UserInputMapping const &event, bool state);
     void StartUsingQueuedEvents();
-    std::queue<UserInputEvent> &Events();
     void EndUsingQueuedEvents();
 
     bool ActionState(UserInputActions action);

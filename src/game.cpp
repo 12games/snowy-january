@@ -1,4 +1,5 @@
 #include "game.h"
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <mutex>
@@ -47,17 +48,9 @@ void UserInput::StartUsingQueuedEvents()
     mappingsMutex.lock();
 }
 
-std::queue<UserInputEvent> &UserInput::Events()
-{
-    return _stateEvents;
-}
-
 void UserInput::EndUsingQueuedEvents()
 {
-    while (!_stateEvents.empty())
-    {
-        _stateEvents.pop();
-    }
+    _stateEventsSinceLastUpdate.clear();
 
     mappingsMutex.unlock();
 }
@@ -104,7 +97,7 @@ void UserInput::ProcessEvent(
     _actionStates[mapping->second] = state;
 
     UserInputEvent e = {mapping->second, state};
-    _stateEvents.push(e);
+    _stateEventsSinceLastUpdate.push_back(e);
 }
 
 bool UserInput::ActionState(
@@ -115,7 +108,17 @@ bool UserInput::ActionState(
         _actionStates.insert(std::make_pair(action, false));
     }
 
-    return _actionStates[action];
+    if (_actionStates[action])
+    {
+        return true;
+    }
+
+    return std::any_of(
+        _stateEventsSinceLastUpdate.begin(),
+        _stateEventsSinceLastUpdate.end(),
+        [action](UserInputEvent e) -> bool {
+            return (e.action == action) && e.newState;
+        });
 }
 
 void UserInput::ReadKeyMappings(
