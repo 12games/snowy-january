@@ -81,8 +81,8 @@ bool SnowyJanuary::Setup()
     style.WindowPadding = ImVec2(15.0f, 15.0f);
     style.ItemSpacing = ImVec2(15.0f, 15.0f);
     style.ItemInnerSpacing = ImVec2(16.0f, 8.0f);
-    style.Colors[ImGuiCol_WindowBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.1f);
-    style.Colors[ImGuiCol_Text] = ImVec4(0.1f, 0.2f, 0.2f, 1.0f);
+    style.Colors[ImGuiCol_WindowBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.4f);
+    style.Colors[ImGuiCol_Text] = ImVec4(0.5f, 0.7f, 0.7f, 1.0f);
 
     glClearColor(0.56f, 0.7f, 0.67f, 1.0f);
 
@@ -295,7 +295,6 @@ void SnowyJanuary::RenderUi()
             }
             if (ImGui::Button("Reset", ImVec2(120, 36)))
             {
-                _carObject->
             }
             bool isStarted = _carObject->EngineIstarted();
             ImGui::Checkbox("Engine started", &isStarted);

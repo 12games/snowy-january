@@ -33,7 +33,9 @@ static const char *UserInputActionNames[] = {
 struct UserInputMapping
 {
     unsigned int source;
+    int player;
     int key;
+    int value;
 
     char const *toString();
 };

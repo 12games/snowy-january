@@ -63,9 +63,9 @@ void UserInput::ProcessEvent(
 
     if (_mappingMode)
     {
-        if (state)
+        if (!state)
         {
-            // We only change mappings on the release of a button
+            // We only change mappings on the press of a button
             return;
         }
 

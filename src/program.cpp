@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     Uint32 lastUpdate = 0;
     Game &game = Game::Instantiate(argc, argv);
 
-    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) < 0)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER | SDL_INIT_TIMER) < 0)
     {
         return 1;
     }
@@ -86,6 +86,14 @@ int main(int argc, char *argv[])
 
     game.Resize(WINDOW_WIDTH, WINDOW_HEIGHT);
 
+    if (SDL_IsGameController(0))
+    {
+        std::cout << "is controlle" << std::endl;
+    }
+
+    SDL_GameControllerEventState(SDL_ENABLE);
+    SDL_GameControllerOpen(0);
+
     while (!done)
     {
         while (SDL_PollEvent(&event))
@@ -102,8 +110,40 @@ int main(int argc, char *argv[])
             }
             if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP)
             {
-                UserInputMapping uie = {SDL_KEYDOWN, event.key.keysym.sym};
+                UserInputMapping uie = {
+                    SDL_KEYDOWN,
+                    0,
+                    event.key.keysym.sym,
+                    event.type == SDL_KEYDOWN ? 0 : 255,
+                };
                 game._userInput.ProcessEvent(uie, (event.type == SDL_KEYDOWN));
+            }
+            if (event.type == SDL_CONTROLLERBUTTONUP || event.type == SDL_CONTROLLERBUTTONDOWN)
+            {
+                std::cout << "button: " << int(event.cbutton.button) << std::endl
+                          << "type: " << (event.type == SDL_CONTROLLERBUTTONUP ? "UP" : "DOWN") << std::endl;
+
+                UserInputMapping uie = {
+                    SDL_CONTROLLERBUTTONDOWN,
+                    event.cbutton.which,
+                    event.cbutton.button,
+                    event.type == SDL_CONTROLLERBUTTONDOWN ? 0 : 255,
+                };
+                game._userInput.ProcessEvent(uie, (event.type == SDL_CONTROLLERBUTTONDOWN));
+            }
+            if (event.type == SDL_CONTROLLERAXISMOTION)
+            {
+                std::cout << "axis: " << int(event.caxis.axis) << std::endl
+                          << "value: " << int(event.caxis.value) << std::endl
+                          << "type: " << int(event.type) << std::endl;
+
+                UserInputMapping uie = {
+                    SDL_CONTROLLERAXISMOTION,
+                    event.caxis.which,
+                    event.caxis.axis,
+                    event.caxis.value,
+                };
+                game._userInput.ProcessEvent(uie, (event.type == SDL_CONTROLLERBUTTONDOWN));
             }
         }
 
@@ -341,6 +381,65 @@ char const *UserInputMapping::toString()
             case SDLK_DOWN:
                 return "Down Arrow";
         }
+    }
+    else if (SDL_CONTROLLERBUTTONDOWN)
+    {
+        switch (key)
+        {
+            case 0:
+                return "Controller button 1";
+            case 1:
+                return "Controller button 2";
+            case 2:
+                return "Controller button 3";
+            case 3:
+                return "Controller button 4";
+            case 4:
+                return "Controller button 5";
+            case 5:
+                return "Controller button 6";
+            case 6:
+                return "Controller button 7";
+            case 7:
+                return "Controller button 8";
+            case 8:
+                return "Controller button 9";
+            case 9:
+                return "Controller button 10";
+            case 10:
+                return "Controller button 11";
+            case 11:
+                return "Controller button 12";
+            case 12:
+                return "Controller button 13";
+            case 13:
+                return "Controller button 14";
+            case 14:
+                return "Controller button 15";
+            case 15:
+                return "Controller button 16";
+            case 16:
+                return "Controller button 17";
+        }
+        if (player == 0)
+        {
+            return "Controller player 1";
+        }
+        if (player == 1)
+        {
+            return "Controller player 2";
+        }
+    }
+    else if (SDL_CONTROLLERAXISMOTION)
+    {
+        if (key == 0 && value > 0)
+            return "Controller Up";
+        else if (key == 0 && value < 0)
+            return "Controller Down";
+        else if (key == 1 && value > 0)
+            return "Controller Left";
+        else if (key == 1 && value < 0)
+            return "Controller Right";
     }
     return "<unknown>";
 }
