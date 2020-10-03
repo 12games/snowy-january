@@ -22,6 +22,17 @@ enum class MenuModes
 
 class SnowyJanuary : public Game
 {
+public:
+    SnowyJanuary(int argc, char *argv[]);
+
+    virtual bool Setup();
+    virtual void Resize(int width, int height);
+    virtual void Update(int dt);
+    virtual void RenderUi();
+    virtual void Render();
+    virtual void Destroy();
+
+private:
     glm::mat4 _proj, _view;
     glm::vec3 _pos;
 
@@ -38,9 +49,9 @@ class SnowyJanuary : public Game
     BufferType _tree;
     float _camOffset[3];
 
-    unsigned int _snowTexture;
-    unsigned int _grassTexture;
-    unsigned int _asphaltTexture;
+    uint32_t _snowTexture;
+    uint32_t _grassTexture;
+    uint32_t _asphaltTexture;
     UpdatingTexture _maskTexture;
     Audio *_toeter;
     Audio *_engineStart;
@@ -51,17 +62,8 @@ class SnowyJanuary : public Game
     std::vector<PhysicsObject *> _treeObjects;
     std::vector<glm::vec2> _treeLocations;
 
-    unsigned int uploadTexture(std::string const &filename);
+    uint32_t uploadTexture(std::string const &filename);
 
-public:
-    SnowyJanuary(int argc, char *argv[]);
-
-    virtual bool Setup();
-    virtual void Resize(int width, int height);
-    virtual void Update(int dt);
-    virtual void RenderUi();
-    virtual void Render();
-    virtual void Destroy();
 };
 
 #endif // SNOWYJANUARY_H

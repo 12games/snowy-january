@@ -18,7 +18,49 @@
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
 
-int main(int argc, char *argv[])
+void OpenGLMessageCallback(
+    unsigned source,
+    unsigned type,
+    unsigned id,
+    unsigned severity,
+    int length,
+    const char *message,
+    const void *userParam)
+{
+    switch (severity)
+    {
+        case GL_DEBUG_SEVERITY_HIGH:
+        {
+            std::cout << "CRITICAL:";
+            break;
+        }
+        case GL_DEBUG_SEVERITY_MEDIUM:
+        {
+            std::cout << "ERROR:";
+            break;
+        }
+        case GL_DEBUG_SEVERITY_LOW:
+        {
+            std::cout << "WARN:";
+            break;
+        }
+        case GL_DEBUG_SEVERITY_NOTIFICATION:
+        {
+            std::cout << "TRACE:";
+            break;
+        }
+        default:
+        {
+            std::cout << "Unknown severity level";
+            break;
+        }
+    }
+    std::cout << "msg=\"" << message << "\" type=\"" << type << "\" id=\"" << id << "\" source=\"" << source << "\"" << std::endl;
+}
+
+int main(
+    int argc,
+    char *argv[])
 {
     SDL_Window *window;
     SDL_GLContext context;
@@ -41,8 +83,8 @@ int main(int argc, char *argv[])
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
 
     window = SDL_CreateWindow(
         "Snowy January",
@@ -76,6 +118,17 @@ int main(int argc, char *argv[])
     }
 
     ImGui_ImplSdlGL3_Init(window);
+
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glDebugMessageCallback(OpenGLMessageCallback, nullptr);
+
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE);
+
+    std::cout << "GL_VERSION                  : " << glGetString(GL_VERSION) << std::endl;
+    std::cout << "GL_SHADING_LANGUAGE_VERSION : " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+    std::cout << "GL_RENDERER                 : " << glGetString(GL_RENDERER) << std::endl;
+    std::cout << "GL_VENDOR                   : " << glGetString(GL_VENDOR) << std::endl;
 
     // Run Setup()
     if (!game.Setup())

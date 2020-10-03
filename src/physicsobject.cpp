@@ -9,25 +9,33 @@
 #include <glm/gtx/quaternion.hpp>
 #include <iostream>
 
-class ImplPhysicsObject : public btMotionState, public PhysicsObject
+class ImplPhysicsObject :
+    public btMotionState,
+    public PhysicsObject
 {
 public:
     glm::mat4 _matrix;
     btRigidBody *_rigidBody;
 
-    void getWorldTransform(btTransform &worldTrans) const override;
-    void setWorldTransform(const btTransform &worldTrans) override;
+    void getWorldTransform(
+        btTransform &worldTrans) const override;
+
+    void setWorldTransform(
+        const btTransform &worldTrans) override;
 
     virtual glm::mat4 const &getMatrix() const override;
+
     virtual class btRigidBody *getRigidBody() override;
 };
 
-void ImplPhysicsObject::getWorldTransform(btTransform &worldTrans) const
+void ImplPhysicsObject::getWorldTransform(
+    btTransform &worldTrans) const
 {
     worldTrans.setFromOpenGLMatrix(glm::value_ptr(_matrix));
 }
 
-void ImplPhysicsObject::setWorldTransform(const btTransform &worldTrans)
+void ImplPhysicsObject::setWorldTransform(
+    const btTransform &worldTrans)
 {
     worldTrans.getOpenGLMatrix(glm::value_ptr(_matrix));
 }
@@ -46,6 +54,44 @@ class CarPhysicsObject :
     public CarObject,
     public ImplPhysicsObject
 {
+public:
+    CarPhysicsObject();
+
+    void SetVehicle(
+        btRaycastVehicle *vehicle,
+        btDefaultVehicleRaycaster *vehicleRayCaster);
+
+    virtual void Update() override;
+
+    virtual bool EngineIstarted() override;
+
+    virtual void StartEngine() override;
+
+    virtual void ChangeSpeed(
+        float amount) override;
+
+    virtual void Steer(
+        float amount) override;
+
+    virtual void Brake() override;
+
+    virtual void StopEngine() override;
+
+    virtual float Speed() const override;
+
+    virtual float Steering() const override;
+
+    void setWorldTransform(
+        const btTransform &worldTrans) override;
+
+    virtual glm::mat4 const &getMatrix() const override;
+
+    virtual class btRigidBody *getRigidBody() override;
+
+    virtual glm::mat4 const &getWheelMatrix(
+        int wheel) const override;
+
+private:
     const float MIN_SPEED = -50.0f;
     const float MAX_SPEED = 100.0f;
     const float MIN_STEER = -0.3f;
@@ -58,29 +104,6 @@ class CarPhysicsObject :
     glm::mat4 _wheelMatrix[4];
     btRaycastVehicle *_vehicle;
     btDefaultVehicleRaycaster *_vehicleRayCaster;
-
-public:
-    CarPhysicsObject();
-
-    void SetVehicle(btRaycastVehicle *vehicle, btDefaultVehicleRaycaster *vehicleRayCaster);
-
-    virtual void Update() override;
-    virtual bool EngineIstarted() override;
-    virtual void StartEngine() override;
-    virtual void ChangeSpeed(float amount) override;
-    virtual void Steer(float amount) override;
-    virtual void Brake() override;
-    virtual void StopEngine() override;
-
-    virtual float Speed() const override;
-    virtual float Steering() const override;
-
-    void setWorldTransform(const btTransform &worldTrans) override;
-
-    virtual glm::mat4 const &getMatrix() const override;
-    virtual class btRigidBody *getRigidBody() override;
-
-    virtual glm::mat4 const &getWheelMatrix(int wheel) const override;
 };
 
 CarPhysicsObject::CarPhysicsObject()
@@ -97,7 +120,8 @@ CarPhysicsObject::CarPhysicsObject()
     _wheelMatrix[3] = glm::mat4(1.0f);
 }
 
-void CarPhysicsObject::setWorldTransform(const btTransform &worldTrans)
+void CarPhysicsObject::setWorldTransform(
+    const btTransform &worldTrans)
 {
     for (int i = 0; i < 4; i++)
     {
@@ -109,7 +133,9 @@ void CarPhysicsObject::setWorldTransform(const btTransform &worldTrans)
     ImplPhysicsObject::setWorldTransform(worldTrans);
 }
 
-void CarPhysicsObject::SetVehicle(btRaycastVehicle *vehicle, btDefaultVehicleRaycaster *vehicleRayCaster)
+void CarPhysicsObject::SetVehicle(
+    btRaycastVehicle *vehicle,
+    btDefaultVehicleRaycaster *vehicleRayCaster)
 {
     _vehicle = vehicle;
     _vehicleRayCaster = vehicleRayCaster;
@@ -160,7 +186,8 @@ void CarPhysicsObject::StartEngine()
     _engineStarted = true;
 }
 
-void CarPhysicsObject::ChangeSpeed(float amount)
+void CarPhysicsObject::ChangeSpeed(
+    float amount)
 {
     if (!_engineStarted)
     {
@@ -178,7 +205,8 @@ void CarPhysicsObject::ChangeSpeed(float amount)
     }
 }
 
-void CarPhysicsObject::Steer(float amount)
+void CarPhysicsObject::Steer(
+    float amount)
 {
     if (!_engineStarted)
     {
@@ -223,7 +251,8 @@ float CarPhysicsObject::Steering() const
     return _steering;
 }
 
-glm::mat4 const &CarPhysicsObject::getWheelMatrix(int wheel) const
+glm::mat4 const &CarPhysicsObject::getWheelMatrix(
+    int wheel) const
 {
     return _wheelMatrix[wheel];
 }
@@ -238,7 +267,8 @@ btRigidBody *CarPhysicsObject::getRigidBody()
     return ImplPhysicsObject::getRigidBody();
 }
 
-PhysicsObjectBuilder::PhysicsObjectBuilder(PhysicsManager &manager)
+PhysicsObjectBuilder::PhysicsObjectBuilder(
+    PhysicsManager &manager)
     : _manager(manager),
       _initialPos(glm::vec3(0.0f)),
       _initialRot(glm::toQuat(glm::mat4(1.0f)))
@@ -286,7 +316,7 @@ void addWheels(
     //The axis which the wheel rotates arround
     btVector3 wheelAxleCS(1, 0, 0);
 
-    btScalar suspensionRestLength(0.6);
+    btScalar suspensionRestLength(0.6f);
 
     btScalar wheelWidth(0.6f);
 
@@ -356,7 +386,8 @@ CarObject *PhysicsObjectBuilder::BuildCar()
     return obj;
 }
 
-PhysicsObjectBuilder &PhysicsObjectBuilder::Box(glm::vec3 const &size)
+PhysicsObjectBuilder &PhysicsObjectBuilder::Box(
+    glm::vec3 const &size)
 {
     _inputSize = size;
     this->_shape = new btBoxShape(btVector3(size.x / 2.0f, size.y / 2.0f, size.z / 2.0f));
@@ -364,14 +395,16 @@ PhysicsObjectBuilder &PhysicsObjectBuilder::Box(glm::vec3 const &size)
     return (*this);
 }
 
-PhysicsObjectBuilder &PhysicsObjectBuilder::Sphere(float radius)
+PhysicsObjectBuilder &PhysicsObjectBuilder::Sphere(
+    float radius)
 {
     this->_shape = new btSphereShape(radius);
 
     return (*this);
 }
 
-PhysicsObjectBuilder &PhysicsObjectBuilder::Cylinder(glm::vec3 const &size)
+PhysicsObjectBuilder &PhysicsObjectBuilder::Cylinder(
+    glm::vec3 const &size)
 {
     _inputSize = size;
     this->_shape = new btCylinderShape(btVector3(size.x / 2.0f, size.y / 2.0f, size.z / 2.0f));
@@ -379,14 +412,17 @@ PhysicsObjectBuilder &PhysicsObjectBuilder::Cylinder(glm::vec3 const &size)
     return (*this);
 }
 
-PhysicsObjectBuilder &PhysicsObjectBuilder::Cone(float radius, float height)
+PhysicsObjectBuilder &PhysicsObjectBuilder::Cone(
+    float radius,
+    float height)
 {
     this->_shape = new btConeShape(radius, height);
 
     return (*this);
 }
 
-PhysicsObjectBuilder &PhysicsObjectBuilder::Car(glm::vec3 const &size)
+PhysicsObjectBuilder &PhysicsObjectBuilder::Car(
+    glm::vec3 const &size)
 {
     btTransform localTrans;
     localTrans.setIdentity();
@@ -407,42 +443,48 @@ PhysicsObjectBuilder &PhysicsObjectBuilder::Car(glm::vec3 const &size)
     return (*this);
 }
 
-PhysicsObjectBuilder &PhysicsObjectBuilder::InitialPosition(glm::vec3 const &position)
+PhysicsObjectBuilder &PhysicsObjectBuilder::InitialPosition(
+    glm::vec3 const &position)
 {
     _initialPos = position;
 
     return (*this);
 }
 
-PhysicsObjectBuilder &PhysicsObjectBuilder::InitialRotation(glm::quat const &rotation)
+PhysicsObjectBuilder &PhysicsObjectBuilder::InitialRotation(
+    glm::quat const &rotation)
 {
     _initialRot = rotation;
 
     return (*this);
 }
 
-PhysicsObjectBuilder &PhysicsObjectBuilder::Mass(float amount)
+PhysicsObjectBuilder &PhysicsObjectBuilder::Mass(
+    float amount)
 {
     _mass = amount;
 
     return (*this);
 }
 
-PhysicsObjectBuilder &PhysicsObjectBuilder::Friction(float amount)
+PhysicsObjectBuilder &PhysicsObjectBuilder::Friction(
+    float amount)
 {
     _friction = amount;
 
     return (*this);
 }
 
-PhysicsObjectBuilder &PhysicsObjectBuilder::LinearDamping(float amount)
+PhysicsObjectBuilder &PhysicsObjectBuilder::LinearDamping(
+    float amount)
 {
     _linearDamping = amount;
 
     return (*this);
 }
 
-PhysicsObjectBuilder &PhysicsObjectBuilder::AngularDamping(float amount)
+PhysicsObjectBuilder &PhysicsObjectBuilder::AngularDamping(
+    float amount)
 {
     _angularDamping = amount;
 

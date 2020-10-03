@@ -121,6 +121,12 @@ bool UserInput::ActionState(
         });
 }
 
+void UserInput::SetDefault(
+    const std::map<UserInputMapping, UserInputActions> &mapping)
+{
+    _defaultMapping = mapping;
+}
+
 void UserInput::ReadKeyMappings(
     std::string const &filename)
 {
@@ -134,6 +140,7 @@ void UserInput::ReadKeyMappings(
         {
             // TODO log this somewhere
             std::cerr << "could not open \"" << filename << "\" for reading" << std::endl;
+            _stateMapping = _defaultMapping;
             return;
         }
 
@@ -144,7 +151,7 @@ void UserInput::ReadKeyMappings(
         {
             std::istringstream iss(line);
             std::string action;
-            unsigned int source;
+            uint32_t source;
             int key;
             iss >> action >> source >> key;
             UserInputActions enumAction;
@@ -157,8 +164,13 @@ void UserInput::ReadKeyMappings(
                 }
             }
 
-            UserInputMapping uie = {source, key};
+            UserInputMapping uie = {source, 0, key, 0};
             _stateMapping.insert(std::make_pair(uie, enumAction));
+        }
+
+        if (_stateMapping.empty())
+        {
+            _stateMapping = _defaultMapping;
         }
 
         infile.close();

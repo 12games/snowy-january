@@ -8,7 +8,6 @@ using namespace std;
 PhysicsManager::Config PhysicsManager::_config = {9.81f};
 
 PhysicsManager::PhysicsManager()
-    : _drawer(nullptr)
 {
     _broadphase = new btDbvtBroadphase();
 
@@ -54,7 +53,8 @@ PhysicsManager::~PhysicsManager()
     _broadphase = nullptr;
 }
 
-void PhysicsManager::Step(float gameTime)
+void PhysicsManager::Step(
+    float gameTime)
 {
     _dynamicsWorld->stepSimulation(gameTime, 1);
     int numManifolds = _dynamicsWorld->getDispatcher()->getNumManifolds();
@@ -81,7 +81,10 @@ void PhysicsManager::Step(float gameTime)
     }
 }
 
-void PhysicsManager::AddObject(PhysicsObject *obj, short group, short mask)
+void PhysicsManager::AddObject(
+    PhysicsObject *obj,
+    short group,
+    short mask)
 {
     if (obj == nullptr)
     {
@@ -91,7 +94,8 @@ void PhysicsManager::AddObject(PhysicsObject *obj, short group, short mask)
     _dynamicsWorld->addRigidBody(obj->getRigidBody(), group, mask);
 }
 
-void PhysicsManager::RemoveObject(PhysicsObject *obj)
+void PhysicsManager::RemoveObject(
+    PhysicsObject *obj)
 {
     if (obj == nullptr)
     {

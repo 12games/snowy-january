@@ -17,13 +17,35 @@
 
 class PhysicsManager
 {
-    friend class PhysicsObjectBuilder;
+public:
+    PhysicsManager();
+
+    virtual ~PhysicsManager();
+
+    void InitDebugDraw();
+
+    void DebugDraw(
+        glm::mat4 const &proj,
+        glm::mat4 const &view);
+
+    void Step(
+        float gameTime);
+
+    void AddObject(
+        PhysicsObject *obj,
+        short group = btBroadphaseProxy::DefaultFilter,
+        short mask = btBroadphaseProxy::DefaultFilter | btBroadphaseProxy::StaticFilter | btBroadphaseProxy::CharacterFilter);
+
+    void RemoveObject(
+        PhysicsObject *obj);
+
 private:
-    btBroadphaseInterface *_broadphase;
-    btDefaultCollisionConfiguration *_collisionConfiguration;
-    btCollisionDispatcher *_dispatcher;
-    btSequentialImpulseConstraintSolver *_solver;
-    btDiscreteDynamicsWorld *_dynamicsWorld;
+    friend class PhysicsObjectBuilder;
+    btBroadphaseInterface *_broadphase = nullptr;
+    btDefaultCollisionConfiguration *_collisionConfiguration = nullptr;
+    btCollisionDispatcher *_dispatcher = nullptr;
+    btSequentialImpulseConstraintSolver *_solver = nullptr;
+    btDiscreteDynamicsWorld *_dynamicsWorld = nullptr;
 
     static struct Config
     {
@@ -31,19 +53,7 @@ private:
 
     } _config;
 
-    class DebugDrawer *_drawer;
-
-public:
-    PhysicsManager();
-    virtual ~PhysicsManager();
-
-    void InitDebugDraw();
-    void DebugDraw(glm::mat4 const &proj, glm::mat4 const &view);
-
-    void Step(float gameTime);
-
-    void AddObject(PhysicsObject *obj, short group = btBroadphaseProxy::DefaultFilter, short mask = btBroadphaseProxy::DefaultFilter | btBroadphaseProxy::StaticFilter | btBroadphaseProxy::CharacterFilter);
-    void RemoveObject(PhysicsObject *obj);
+    class DebugDrawer *_drawer = nullptr;
 };
 
 #endif /* PHYSICS_H */

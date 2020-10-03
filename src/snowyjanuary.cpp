@@ -3,6 +3,8 @@
 #include <glad/glad.h>
 #include <imgui.h>
 
+#include <map>
+
 #define SYSTEM_IO_FILEINFO_IMPLEMENTATION
 #include <system.io.fileinfo.h>
 #include <system.io.path.h>
@@ -12,22 +14,44 @@
 
 #define KEYMAP_FILE "snowyjanuary.keymap"
 
-Game &Game::Instantiate(int argc, char *argv[])
+static std::map<UserInputMapping, UserInputActions> defaultInputMapping;
+
+Game &Game::Instantiate(
+    int argc,
+    char *argv[])
 {
     static SnowyJanuary game(argc, argv);
 
     return game;
 }
 
-SnowyJanuary::SnowyJanuary(int argc, char *argv[])
-    : _menuMode(MenuModes::NoMenu), _floor(_floorShader), _car(_boxShader), _truck(_boxShader),
-      _wheelLeft(_boxShader), _wheelRight(_boxShader), _tree(_boxShader)
+SnowyJanuary::SnowyJanuary(
+    int argc,
+    char *argv[])
+    : _menuMode(MenuModes::NoMenu),
+      _floor(_floorShader),
+      _car(_boxShader),
+      _truck(_boxShader),
+      _wheelLeft(_boxShader),
+      _wheelRight(_boxShader),
+      _tree(_boxShader),
+      _camOffset{0.0f, 0.0f, 0.0f},
+      _snowTexture(0),
+      _grassTexture(0),
+      _asphaltTexture(0),
+      _toeter(nullptr),
+      _engineStart(nullptr),
+      _floorObject(nullptr),
+      _carObject(nullptr)
 {
+    (void)argc;
+
     System::IO::FileInfo exe(argv[0]);
     _settingsDir = exe.Directory().FullName();
 }
 
-unsigned int SnowyJanuary::uploadTexture(std::string const &filename)
+uint32_t SnowyJanuary::uploadTexture(
+    std::string const &filename)
 {
     int x, y, comp;
     auto pixels = stbi_load(filename.c_str(), &x, &y, &comp, 3);
@@ -36,7 +60,7 @@ unsigned int SnowyJanuary::uploadTexture(std::string const &filename)
         return 0;
     }
 
-    unsigned int texture = 0;
+    uint32_t texture = 0;
 
     glGenTextures(1, &texture);
 
@@ -45,7 +69,17 @@ unsigned int SnowyJanuary::uploadTexture(std::string const &filename)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, comp == 4 ? GL_RGBA : GL_RGB, x, y, 0, comp == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        comp == 4 ? GL_RGBA : GL_RGB,
+        x,
+        y,
+        0,
+        comp == 4 ? GL_RGBA : GL_RGB,
+        GL_UNSIGNED_BYTE,
+        pixels);
+
     glGenerateMipmap(GL_TEXTURE_2D);
 
     free(pixels);
@@ -59,7 +93,20 @@ bool SnowyJanuary::Setup()
 {
     _camOffset[0] = _camOffset[1] = _camOffset[2] = 5.0f;
 
-    _userInput.ReadKeyMappings(System::IO::Path::Combine(_settingsDir, KEYMAP_FILE));
+    defaultInputMapping.insert({{768, 0, 32, 0}, UserInputActions::StartEngine});
+    defaultInputMapping.insert({{768, 0, 97, 0}, UserInputActions::SteerLeft});
+    defaultInputMapping.insert({{768, 0, 99, 0}, UserInputActions::Action});
+    defaultInputMapping.insert({{768, 0, 100, 0}, UserInputActions::SteerRight});
+    defaultInputMapping.insert({{768, 0, 115, 0}, UserInputActions::SpeedDown});
+    defaultInputMapping.insert({{768, 0, 119, 0}, UserInputActions::SpeedUp});
+    defaultInputMapping.insert({{768, 0, 1073742048, 0}, UserInputActions::Brake});
+    defaultInputMapping.insert({{768, 0, 1073742050, 0}, UserInputActions::StopEngine});
+
+    _userInput
+        .SetDefault(defaultInputMapping);
+
+    _userInput
+        .ReadKeyMappings(System::IO::Path::Combine(_settingsDir, KEYMAP_FILE));
 
     glm::vec2 groundSize(50.0f);
 
@@ -107,7 +154,7 @@ bool SnowyJanuary::Setup()
 
     _carObject = PhysicsObjectBuilder(_physics)
                      .Box(glm::vec3(1.0f, 2.0f, 1.0f))
-                     .Mass(1000.0f)
+                     .Mass(100.0f)
                      .InitialPosition(glm::vec3(0.0f, 0.0f, 2.0f))
                      .BuildCar();
     _physics.AddObject(_carObject);
@@ -152,7 +199,9 @@ bool SnowyJanuary::Setup()
     return true;
 }
 
-void SnowyJanuary::Resize(int width, int height)
+void SnowyJanuary::Resize(
+    int width,
+    int height)
 {
     _width = width;
     _height = height;
@@ -162,7 +211,8 @@ void SnowyJanuary::Resize(int width, int height)
     _view = glm::lookAt(_pos + glm::vec3(5.0f, 5.0f, 0.0f), _pos, glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
-void SnowyJanuary::Update(int dt)
+void SnowyJanuary::Update(
+    int dt)
 {
     if (_menuMode != MenuModes::NoMenu)
     {
@@ -177,46 +227,46 @@ void SnowyJanuary::Update(int dt)
     _pos = glm::vec3(_carObject->getMatrix()[3].x, _carObject->getMatrix()[3].y, 0.0f);
     _view = glm::lookAt(_pos + glm::vec3(_camOffset[0], _camOffset[1], _camOffset[2]), _pos, glm::vec3(0.0f, 0.0f, 1.0f));
 
-        if (_userInput.ActionState(UserInputActions::StartEngine))
-        {
-            _carObject->StartEngine();
-            playSoundFromMemory(_engineStart, SDL_MIX_MAXVOLUME / 2);
-        }
+    if (_userInput.ActionState(UserInputActions::StartEngine))
+    {
+        _carObject->StartEngine();
+        playSoundFromMemory(_engineStart, SDL_MIX_MAXVOLUME / 2);
+    }
 
-        if (_userInput.ActionState(UserInputActions::StopEngine))
-        {
-            _carObject->StopEngine();
-        }
+    if (_userInput.ActionState(UserInputActions::StopEngine))
+    {
+        _carObject->StopEngine();
+    }
 
-        if (_userInput.ActionState(UserInputActions::SpeedUp))
-        {
-            _carObject->ChangeSpeed(1.0f);
-        }
+    if (_userInput.ActionState(UserInputActions::SpeedUp))
+    {
+        _carObject->ChangeSpeed(1.0f);
+    }
 
-        if (_userInput.ActionState(UserInputActions::SpeedDown))
-        {
-            _carObject->ChangeSpeed(-1.0f);
-        }
+    if (_userInput.ActionState(UserInputActions::SpeedDown))
+    {
+        _carObject->ChangeSpeed(-1.0f);
+    }
 
-        if (_userInput.ActionState(UserInputActions::SteerLeft))
-        {
-            _carObject->Steer(0.005f);
-        }
+    if (_userInput.ActionState(UserInputActions::SteerLeft))
+    {
+        _carObject->Steer(0.005f);
+    }
 
-        if (_userInput.ActionState(UserInputActions::SteerRight))
-        {
-            _carObject->Steer(-0.005f);
-        }
+    if (_userInput.ActionState(UserInputActions::SteerRight))
+    {
+        _carObject->Steer(-0.005f);
+    }
 
-        if (_userInput.ActionState(UserInputActions::Brake))
-        {
-            _carObject->Brake();
-        }
+    if (_userInput.ActionState(UserInputActions::Brake))
+    {
+        _carObject->Brake();
+    }
 
-        if (_userInput.ActionState(UserInputActions::Action))
-        {
-            playSoundFromMemory(_toeter, SDL_MIX_MAXVOLUME / 2);
-        }
+    if (_userInput.ActionState(UserInputActions::Action))
+    {
+        playSoundFromMemory(_toeter, SDL_MIX_MAXVOLUME / 2);
+    }
 
     _carObject->Update();
     _physics.Step(dt / 1000.0f);
@@ -280,7 +330,7 @@ void SnowyJanuary::RenderUi()
 {
     static bool show_gui = true;
 
-    float panelWidth = _width > 1024 ? 512 : 275;
+    float panelWidth = _width > 1024.0f ? 512.0f : 275.0f;
 
     if (_menuMode == MenuModes::NoMenu)
     {
@@ -288,7 +338,7 @@ void SnowyJanuary::RenderUi()
         {
             ImGui::SetWindowPos(ImVec2(0, 0));
             // ImGui::SetWindowSize(ImVec2(160, 64));
-            ImGui::SetWindowSize(ImVec2(panelWidth, _height));
+            ImGui::SetWindowSize(ImVec2(float(panelWidth), float(_height)));
             if (ImGui::Button("Pause", ImVec2(120, 36)))
             {
                 _menuMode = MenuModes::MainMenu;
@@ -316,7 +366,7 @@ void SnowyJanuary::RenderUi()
         ImGui::Begin("Settings", &show_gui, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings);
         {
             ImGui::SetWindowPos(ImVec2(0, 0));
-            ImGui::SetWindowSize(ImVec2(panelWidth, _height));
+            ImGui::SetWindowSize(ImVec2(float(panelWidth), float(_height)));
 
             if (_menuMode == MenuModes::MainMenu)
             {

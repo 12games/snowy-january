@@ -13,239 +13,274 @@
 #include <vector>
 
 #if FALSE
-namespace glm {
-
-struct vec3
+namespace glm
 {
-    vec3() : x(0), y(0), z(0) {}
-    vec3(float v) : x(v), y(v), z(v) {}
-    vec3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
 
-    union {
-        float x;
-        float r;
-    };
-    union {
-        float y;
-        float g;
-    };
-    union {
-        float z;
-        float b;
-    };
-
-    float const &operator[](int index) const
+    struct vec3
     {
-        if (index == 0) return x;
-        if (index == 1) return y;
+        vec3() : x(0), y(0), z(0) {}
+        vec3(float v) : x(v), y(v), z(v) {}
+        vec3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
 
-        return z;
-    }
+        union {
+            float x;
+            float r;
+        };
+        union {
+            float y;
+            float g;
+        };
+        union {
+            float z;
+            float b;
+        };
 
-    float &operator[](int index)
-    {
-        if (index == 0) return x;
-        if (index == 1) return y;
+        float const &operator[](
+            int index) const
+        {
+            if (index == 0) return x;
+            if (index == 1) return y;
 
-        return z;
-    }
-};
+            return z;
+        }
 
-vec3 operator+(vec3 const &v1, vec3 const &v2)
-{
-    return vec3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
-}
+        float &operator[](
+            int index)
+        {
+            if (index == 0) return x;
+            if (index == 1) return y;
 
-vec3 operator-(vec3 const &v1, vec3 const &v2)
-{
-    return vec3(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
-}
-
-vec3 cross(vec3 const &v1, vec3 const &v2)
-{
-    return vec3(v1.y * v2.z - v1.z * v2.y,
-                v1.z * v2.x - v1.x * v2.z,
-                v1.x * v2.y - v1.y * v2.x);
-}
-
-float length(vec3 const &v)
-{
-    return float(sqrt(v.x * v.x + v.y * v.y + v.z * v.z));
-}
-
-vec3 normal(vec3 const &v)
-{
-    auto l = length(v);
-    return vec3(v.x / l, v.y / l, v.z / l);
-}
-
-struct vec4
-{
-    vec4() : x(0), y(0), z(0), w(0) {}
-    vec4(float v) : x(v), y(v), z(v), w(v) {}
-    vec4(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {}
-
-    union {
-        float x;
-        float r;
-    };
-    union {
-        float y;
-        float g;
-    };
-    union {
-        float z;
-        float b;
-    };
-    union {
-        float w;
-        float a;
+            return z;
+        }
     };
 
-    float const &operator[](int index) const
+    vec3 operator+(
+        vec3 const &v1,
+        vec3 const &v2)
     {
-        if (index == 0) return x;
-        if (index == 1) return y;
-        if (index == 2) return z;
-
-        return w;
+        return vec3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
     }
 
-    float &operator[](int index)
+    vec3 operator-(
+        vec3 const &v1,
+        vec3 const &v2)
     {
-        if (index == 0) return x;
-        if (index == 1) return y;
-        if (index == 2) return z;
-
-        return w;
-    }
-};
-
-struct mat4
-{
-    mat4() {}
-    mat4(float v)
-    {
-        // Identity
-        values[0].x = v;
-        values[1].y = v;
-        values[2].z = v;
-        values[3].w = v;
-    }
-    mat4(vec4 const &v0, vec4 const &v1, vec4 const &v2, vec4 const &v3)
-    {
-        values[0] = v0;
-        values[1] = v1;
-        values[2] = v2;
-        values[3] = v3;
+        return vec3(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
     }
 
-    vec4 values[4];
-
-    vec4 const &operator[](int index) const
+    vec3 cross(
+        vec3 const &v1,
+        vec3 const &v2)
     {
-        return values[index];
+        return vec3(v1.y * v2.z - v1.z * v2.y,
+                    v1.z * v2.x - v1.x * v2.z,
+                    v1.x * v2.y - v1.y * v2.x);
     }
 
-    vec4 &operator[](int index)
+    float length(
+        vec3 const &v)
     {
-        return values[index];
+        return float(sqrt(v.x * v.x + v.y * v.y + v.z * v.z));
     }
-};
 
-vec4 operator*(mat4 const &m, vec4 const &v)
-{
-    return vec4(
-        m[0][0] * v[0] + m[1][0] * v[1] + m[2][0] * v[2] + m[3][0] * v[3],
-        m[0][1] * v[0] + m[1][1] * v[1] + m[2][1] * v[2] + m[3][1] * v[3],
-        m[0][2] * v[0] + m[1][2] * v[1] + m[2][2] * v[2] + m[3][2] * v[3],
-        m[0][3] * v[0] + m[1][3] * v[1] + m[2][3] * v[2] + m[3][3] * v[3]);
-}
+    vec3 normal(
+        vec3 const &v)
+    {
+        auto l = length(v);
+        return vec3(v.x / l, v.y / l, v.z / l);
+    }
 
-vec4 operator*(vec4 const &v, mat4 const &m)
-{
-    return vec4(
-        v[0] * m[0][0] + v[1] * m[0][1] + v[2] * m[0][2] + v[3] * m[0][3],
-        v[0] * m[1][0] + v[1] * m[1][1] + v[2] * m[1][2] + v[3] * m[1][3],
-        v[0] * m[2][0] + v[1] * m[2][1] + v[2] * m[2][2] + v[3] * m[2][3],
-        v[0] * m[3][0] + v[1] * m[3][1] + v[2] * m[3][2] + v[3] * m[3][3]);
-}
+    struct vec4
+    {
+        vec4() : x(0), y(0), z(0), w(0) {}
+        vec4(float v) : x(v), y(v), z(v), w(v) {}
+        vec4(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {}
 
-mat4 operator*(mat4 const &m1, mat4 const &m2)
-{
-    vec4 X = m1 * m2[0];
-    vec4 Y = m1 * m2[1];
-    vec4 Z = m1 * m2[2];
-    vec4 W = m1 * m2[3];
+        union {
+            float x;
+            float r;
+        };
+        union {
+            float y;
+            float g;
+        };
+        union {
+            float z;
+            float b;
+        };
+        union {
+            float w;
+            float a;
+        };
 
-    return mat4(X, Y, Z, W);
-}
+        float const &operator[](int index) const
+        {
+            if (index == 0) return x;
+            if (index == 1) return y;
+            if (index == 2) return z;
 
-float radians(float degrees)
-{
-    return degrees * 0.01745329251994329576923690768489f;
-}
+            return w;
+        }
 
-float const *value_ptr(mat4 const &m)
-{
-    return &m.values[0].x;
-}
+        float &operator[](int index)
+        {
+            if (index == 0) return x;
+            if (index == 1) return y;
+            if (index == 2) return z;
 
-mat4 perspective(float fovy, float aspect, float zNear, float zFar)
-{
-    float const tanHalfFovy = tan(fovy / static_cast<float>(2));
+            return w;
+        }
+    };
 
-    mat4 m(static_cast<float>(0));
-    m[0][0] = static_cast<float>(1) / (aspect * tanHalfFovy);
-    m[1][1] = static_cast<float>(1) / (tanHalfFovy);
-    m[2][2] = -(zFar + zNear) / (zFar - zNear);
-    m[2][3] = -static_cast<float>(1);
-    m[3][2] = -(static_cast<float>(2) * zFar * zNear) / (zFar - zNear);
+    struct mat4
+    {
+        mat4() {}
+        mat4(
+            float v)
+        {
+            // Identity
+            values[0].x = v;
+            values[1].y = v;
+            values[2].z = v;
+            values[3].w = v;
+        }
+        mat4(
+            vec4 const &v0,
+            vec4 const &v1,
+            vec4 const &v2,
+            vec4 const &v3)
+        {
+            values[0] = v0;
+            values[1] = v1;
+            values[2] = v2;
+            values[3] = v3;
+        }
 
-    return m;
-}
+        vec4 values[4];
 
-mat4 lookAt(vec3 const &eye, vec3 const &target, vec3 const &up)
-{
-    vec3 zaxis = normal(eye - target);
-    vec3 xaxis = normal(cross(up, zaxis));
-    vec3 yaxis = cross(zaxis, xaxis);
+        vec4 const &operator[](
+            int index) const
+        {
+            return values[index];
+        }
 
-    mat4 orientation = {
-        vec4(xaxis.x, yaxis.x, zaxis.x, 0),
-        vec4(xaxis.y, yaxis.y, zaxis.y, 0),
-        vec4(xaxis.z, yaxis.z, zaxis.z, 0),
-        vec4(0, 0, 0, 1)};
+        vec4 &operator[](
+            int index)
+        {
+            return values[index];
+        }
+    };
 
-    mat4 translation = {
-        vec4(1, 0, 0, 0),
-        vec4(0, 1, 0, 0),
-        vec4(0, 0, 1, 0),
-        vec4(-eye.x, -eye.y, -eye.z, 1)};
+    vec4 operator*(
+        mat4 const &m,
+        vec4 const &v)
+    {
+        return vec4(
+            m[0][0] * v[0] + m[1][0] * v[1] + m[2][0] * v[2] + m[3][0] * v[3],
+            m[0][1] * v[0] + m[1][1] * v[1] + m[2][1] * v[2] + m[3][1] * v[3],
+            m[0][2] * v[0] + m[1][2] * v[1] + m[2][2] * v[2] + m[3][2] * v[3],
+            m[0][3] * v[0] + m[1][3] * v[1] + m[2][3] * v[2] + m[3][3] * v[3]);
+    }
 
-    return (orientation * translation);
-}
+    vec4 operator*(
+        vec4 const &v,
+        mat4 const &m)
+    {
+        return vec4(
+            v[0] * m[0][0] + v[1] * m[0][1] + v[2] * m[0][2] + v[3] * m[0][3],
+            v[0] * m[1][0] + v[1] * m[1][1] + v[2] * m[1][2] + v[3] * m[1][3],
+            v[0] * m[2][0] + v[1] * m[2][1] + v[2] * m[2][2] + v[3] * m[2][3],
+            v[0] * m[3][0] + v[1] * m[3][1] + v[2] * m[3][2] + v[3] * m[3][3]);
+    }
 
-std::string to_string(vec4 const &x)
-{
-    std::stringstream ss;
+    mat4 operator*(
+        mat4 const &m1,
+        mat4 const &m2)
+    {
+        vec4 X = m1 * m2[0];
+        vec4 Y = m1 * m2[1];
+        vec4 Z = m1 * m2[2];
+        vec4 W = m1 * m2[3];
 
-    ss << "(" << x.x << ", " << x.y << ", " << x.z << ", " << x.w << ")";
+        return mat4(X, Y, Z, W);
+    }
 
-    return ss.str();
-}
+    float radians(
+        float degrees)
+    {
+        return degrees * 0.01745329251994329576923690768489f;
+    }
 
-std::string to_string(mat4 const &x)
-{
-    std::stringstream ss;
+    float const *value_ptr(
+        mat4 const &m)
+    {
+        return &m.values[0].x;
+    }
 
-    ss << "mat4x4(" << to_string(x.values[0]) << ", "
-       << to_string(x.values[1]) << ", "
-       << to_string(x.values[2]) << ", "
-       << to_string(x.values[3]) << ")";
+    mat4 perspective(
+        float fovy,
+        float aspect,
+        float zNear,
+        float zFar)
+    {
+        float const tanHalfFovy = tan(fovy / static_cast<float>(2));
 
-    return ss.str();
-}
+        mat4 m(static_cast<float>(0));
+        m[0][0] = static_cast<float>(1) / (aspect * tanHalfFovy);
+        m[1][1] = static_cast<float>(1) / (tanHalfFovy);
+        m[2][2] = -(zFar + zNear) / (zFar - zNear);
+        m[2][3] = -static_cast<float>(1);
+        m[3][2] = -(static_cast<float>(2) * zFar * zNear) / (zFar - zNear);
+
+        return m;
+    }
+
+    mat4 lookAt(
+        vec3 const &eye,
+        vec3 const &target,
+        vec3 const &up)
+    {
+        vec3 zaxis = normal(eye - target);
+        vec3 xaxis = normal(cross(up, zaxis));
+        vec3 yaxis = cross(zaxis, xaxis);
+
+        mat4 orientation = {
+            vec4(xaxis.x, yaxis.x, zaxis.x, 0),
+            vec4(xaxis.y, yaxis.y, zaxis.y, 0),
+            vec4(xaxis.z, yaxis.z, zaxis.z, 0),
+            vec4(0, 0, 0, 1)};
+
+        mat4 translation = {
+            vec4(1, 0, 0, 0),
+            vec4(0, 1, 0, 0),
+            vec4(0, 0, 1, 0),
+            vec4(-eye.x, -eye.y, -eye.z, 1)};
+
+        return (orientation * translation);
+    }
+
+    std::string to_string(
+        vec4 const &x)
+    {
+        std::stringstream ss;
+
+        ss << "(" << x.x << ", " << x.y << ", " << x.z << ", " << x.w << ")";
+
+        return ss.str();
+    }
+
+    std::string to_string(
+        mat4 const &x)
+    {
+        std::stringstream ss;
+
+        ss << "mat4x4(" << to_string(x.values[0]) << ", "
+           << to_string(x.values[1]) << ", "
+           << to_string(x.values[2]) << ", "
+           << to_string(x.values[3]) << ")";
+
+        return ss.str();
+    }
 
 } // namespace glm
 
@@ -276,9 +311,16 @@ class ShaderType
 
 public:
     ShaderType()
-        : _shaderId(0), _projectionUniformId(0), _viewUniformId(0), _modelUniformId(0),
-          _projectionUniformName("u_projection"), _viewUniformName("u_view"), _modelUniformName("u_model"),
-          _vertexAttributeName("vertex"), _colorAttributeName("color"), _normalAttributeName("normal")
+        : _shaderId(0),
+          _projectionUniformId(0),
+          _viewUniformId(0),
+          _modelUniformId(0),
+          _projectionUniformName("u_projection"),
+          _viewUniformName("u_view"),
+          _modelUniformName("u_model"),
+          _vertexAttributeName("vertex"),
+          _colorAttributeName("color"),
+          _normalAttributeName("normal")
     {}
 
     virtual ~ShaderType() {}
@@ -293,7 +335,9 @@ public:
         glUseProgram(_shaderId);
     }
 
-    virtual bool compileFromFile(std::string const &vertShaderFile, std::string const &fragShaderFile)
+    virtual bool compileFromFile(
+        std::string const &vertShaderFile,
+        std::string const &fragShaderFile)
     {
         std::ifstream vertShaderFileStream(vertShaderFile.c_str());
         std::string vertShaderStr((std::istreambuf_iterator<char>(vertShaderFileStream)),
@@ -366,7 +410,9 @@ public:
         return true;
     }
 
-    virtual bool compile(std::string const &vertShaderStr, std::string const &fragShaderStr)
+    virtual bool compile(
+        std::string const &vertShaderStr,
+        std::string const &fragShaderStr)
     {
         GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
         GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -434,7 +480,10 @@ public:
         return true;
     }
 
-    void setupMatrices(glm::mat4 const &projection, glm::mat4 const &view, glm::mat4 const &model)
+    void setupMatrices(
+        glm::mat4 const &projection,
+        glm::mat4 const &view,
+        glm::mat4 const &model)
     {
         use();
 
@@ -443,7 +492,9 @@ public:
         glUniformMatrix4fv(_modelUniformId, 1, false, glm::value_ptr(model));
     }
 
-    void setupMatrices(glm::mat4 const &projectionView, glm::mat4 const &model)
+    void setupMatrices(
+        glm::mat4 const &projectionView,
+        glm::mat4 const &model)
     {
         use();
 
@@ -456,35 +507,53 @@ public:
         auto vertexSize = sizeof(VertexType);
 
         auto vertexAttrib = glGetAttribLocation(_shaderId, _vertexAttributeName.c_str());
-        glVertexAttribPointer(GLuint(vertexAttrib), sizeof(VertexType::pos) / sizeof(float), GL_FLOAT, GL_FALSE, vertexSize, 0);
+
+        glVertexAttribPointer(
+            GLuint(vertexAttrib),
+            sizeof(VertexType::pos) / sizeof(float),
+            GL_FLOAT,
+            GL_FALSE,
+            static_cast<GLsizei>(vertexSize),
+            0);
+
         glEnableVertexAttribArray(GLuint(vertexAttrib));
 
         auto colorAttrib = glGetAttribLocation(_shaderId, _colorAttributeName.c_str());
-        glVertexAttribPointer(GLuint(colorAttrib), sizeof(VertexType::col) / sizeof(float), GL_FLOAT, GL_FALSE, vertexSize, reinterpret_cast<const GLvoid *>(sizeof(VertexType::pos)));
+        glVertexAttribPointer(
+            GLuint(colorAttrib),
+            sizeof(VertexType::col) / sizeof(float),
+            GL_FLOAT,
+            GL_FALSE,
+            static_cast<GLsizei>(vertexSize),
+            reinterpret_cast<const GLvoid *>(sizeof(VertexType::pos)));
+
         glEnableVertexAttribArray(GLuint(colorAttrib));
 
         auto normalAttrib = glGetAttribLocation(_shaderId, _normalAttributeName.c_str());
-        glVertexAttribPointer(GLuint(normalAttrib), sizeof(VertexType::nor) / sizeof(float), GL_FLOAT, GL_FALSE, vertexSize, reinterpret_cast<const GLvoid *>(sizeof(VertexType::pos) + sizeof(VertexType::col)));
+
+        glVertexAttribPointer(
+            GLuint(normalAttrib),
+            sizeof(VertexType::nor) / sizeof(float),
+            GL_FLOAT,
+            GL_FALSE,
+            static_cast<GLsizei>(vertexSize),
+            reinterpret_cast<const GLvoid *>(sizeof(VertexType::pos) + sizeof(VertexType::col)));
+
         glEnableVertexAttribArray(GLuint(normalAttrib));
     }
 };
 
 class BufferType
 {
-    const ShaderType &_shader;
-    int _vertexCount;
-    std::vector<VertexType> _verts;
-    glm::vec4 _nextColor;
-    glm::vec3 _nextNormal;
-    unsigned int _vertexArrayId;
-    unsigned int _vertexBufferId;
-    GLenum _drawMode;
-    std::map<int, int> _faces;
-
 public:
-    BufferType(ShaderType const &shader)
-        : _shader(shader), _vertexCount(0), _vertexArrayId(0), _vertexBufferId(0), _drawMode(GL_TRIANGLES),
-          _nextColor(glm::vec4(1.0f))
+    BufferType(
+        ShaderType const &shader)
+        : _shader(shader),
+          _vertexCount(0),
+          _nextColor(glm::vec4(1.0f)),
+          _vertexArrayId(0),
+          _vertexBufferId(0),
+          _drawMode(GL_TRIANGLES)
     {}
 
     virtual ~BufferType() {}
@@ -494,7 +563,8 @@ public:
         return _verts;
     }
 
-    BufferType &operator<<(VertexType const &vertex)
+    BufferType &operator<<(
+        VertexType const &vertex)
     {
         _verts.push_back(vertex);
         _vertexCount = _verts.size();
@@ -502,22 +572,26 @@ public:
         return *this;
     }
 
-    void setDrawMode(GLenum mode)
+    void setDrawMode(
+        GLenum mode)
     {
         _drawMode = mode;
     }
 
-    void addFace(int start, int count)
+    void addFace(
+        int start,
+        int count)
     {
         _faces.insert(std::make_pair(start, count));
     }
 
-    int vertexCount() const
+    size_t vertexCount() const
     {
         return _vertexCount;
     }
 
-    BufferType &vertex(glm::vec3 const &position)
+    BufferType &vertex(
+        glm::vec3 const &position)
     {
         _verts.push_back(VertexType({position, _nextColor, _nextNormal}));
 
@@ -526,28 +600,35 @@ public:
         return *this;
     }
 
-    BufferType &color(glm::vec4 const &color)
+    BufferType &color(
+        glm::vec4 const &color)
     {
         _nextColor = color;
 
         return *this;
     }
 
-    BufferType &normal(glm::vec3 const &normal)
+    BufferType &normal(
+        glm::vec3 const &normal)
     {
         _nextNormal = normal;
 
         return *this;
     }
 
-    BufferType &colorVertex(glm::vec4 const &color, glm::vec3 const &position)
+    BufferType &colorVertex(
+        glm::vec4 const &color,
+        glm::vec3 const &position)
     {
         _nextColor = color;
 
         return vertex(position);
     }
 
-    BufferType &colorNormalVertex(glm::vec4 const &color, glm::vec4 const &normal, glm::vec3 const &position)
+    BufferType &colorNormalVertex(
+        glm::vec4 const &color,
+        glm::vec4 const &normal,
+        glm::vec3 const &position)
     {
         _nextColor = color;
         _nextNormal = normal;
@@ -571,7 +652,7 @@ public:
         _drawMode = GL_TRIANGLES;
 
         return (*this)
-                .normal(glm::vec3(0.0f, 0.0f, 1.0f))
+            .normal(glm::vec3(0.0f, 0.0f, 1.0f))
             .vertex(glm::vec3(0.5f, 0.5f, 0.5f))
             .vertex(glm::vec3(-0.5f, 0.5f, 0.5f))
             .vertex(glm::vec3(-0.5f, -0.5f, 0.5f))
@@ -579,7 +660,7 @@ public:
             .vertex(glm::vec3(0.5f, 0.5f, 0.5f))
             .vertex(glm::vec3(-0.5f, -0.5f, 0.5f))
 
-                .normal(glm::vec3(0.0f, 0.0f, -1.0f))
+            .normal(glm::vec3(0.0f, 0.0f, -1.0f))
             .vertex(glm::vec3(-0.5f, -0.5f, -0.5f))
             .vertex(glm::vec3(-0.5f, 0.5f, -0.5f))
             .vertex(glm::vec3(0.5f, 0.5f, -0.5f))
@@ -587,7 +668,7 @@ public:
             .vertex(glm::vec3(0.5f, 0.5f, -0.5f))
             .vertex(glm::vec3(0.5f, -0.5f, -0.5f))
 
-                .normal(glm::vec3(0.0f, 1.0f, 0.0f))
+            .normal(glm::vec3(0.0f, 1.0f, 0.0f))
             .vertex(glm::vec3(-0.5f, 0.5f, -0.5f))
             .vertex(glm::vec3(-0.5f, 0.5f, 0.5f))
             .vertex(glm::vec3(0.5f, 0.5f, 0.5f))
@@ -595,7 +676,7 @@ public:
             .vertex(glm::vec3(0.5f, 0.5f, 0.5f))
             .vertex(glm::vec3(0.5f, 0.5f, -0.5f))
 
-                .normal(glm::vec3(0.0f, -1.0f, 0.0f))
+            .normal(glm::vec3(0.0f, -1.0f, 0.0f))
             .vertex(glm::vec3(0.5f, -0.5f, 0.5f))
             .vertex(glm::vec3(-0.5f, -0.5f, 0.5f))
             .vertex(glm::vec3(-0.5f, -0.5f, -0.5f))
@@ -603,7 +684,7 @@ public:
             .vertex(glm::vec3(0.5f, -0.5f, 0.5f))
             .vertex(glm::vec3(-0.5f, -0.5f, -0.5f))
 
-                .normal(glm::vec3(-1.0f, 0.0f, 0.0f))
+            .normal(glm::vec3(-1.0f, 0.0f, 0.0f))
             .vertex(glm::vec3(-0.5f, -0.5f, -0.5f))
             .vertex(glm::vec3(-0.5f, -0.5f, 0.5f))
             .vertex(glm::vec3(-0.5f, 0.5f, 0.5f))
@@ -611,7 +692,7 @@ public:
             .vertex(glm::vec3(-0.5f, 0.5f, 0.5f))
             .vertex(glm::vec3(-0.5f, 0.5f, -0.5f))
 
-                .normal(glm::vec3(1.0f, 0.0f, 0.0f))
+            .normal(glm::vec3(1.0f, 0.0f, 0.0f))
             .vertex(glm::vec3(0.5f, 0.5f, 0.5f))
             .vertex(glm::vec3(0.5f, -0.5f, 0.5f))
             .vertex(glm::vec3(0.5f, -0.5f, -0.5f))
@@ -620,7 +701,8 @@ public:
             .vertex(glm::vec3(0.5f, -0.5f, -0.5f));
     }
 
-    BufferType &scale(glm::vec3 const &amount)
+    BufferType &scale(
+        glm::vec3 const &amount)
     {
         for (VertexType &v : _verts)
         {
@@ -630,7 +712,8 @@ public:
         return (*this);
     }
 
-    BufferType &move(glm::vec3 const &amount)
+    BufferType &move(
+        glm::vec3 const &amount)
     {
         for (VertexType &v : _verts)
         {
@@ -640,7 +723,8 @@ public:
         return (*this);
     }
 
-    BufferType &fillColor(glm::vec4 const &color)
+    BufferType &fillColor(
+        glm::vec4 const &color)
     {
         for (VertexType &v : _verts)
         {
@@ -672,8 +756,8 @@ public:
             {
                 // Loop over faces(polygon)
                 size_t index_offset = 0;
-                int faceCount = shapes[s].mesh.num_face_vertices.size();
-                for (int f = 0; f < faceCount; f++)
+                auto faceCount = shapes[s].mesh.num_face_vertices.size();
+                for (size_t f = 0; f < faceCount; f++)
                 {
                     if (materials.size() > 0 && shapes[s].mesh.material_ids[f] >= 0)
                     {
@@ -750,7 +834,7 @@ public:
         glBindVertexArray(_vertexArrayId);
         if (_faces.empty())
         {
-            glDrawArrays(_drawMode, 0, _vertexCount);
+            glDrawArrays(_drawMode, 0, static_cast<GLsizei>(_vertexCount));
         }
         else
         {
@@ -776,6 +860,17 @@ public:
             _vertexArrayId = 0;
         }
     }
+
+private:
+    const ShaderType &_shader;
+    size_t _vertexCount;
+    std::vector<VertexType> _verts;
+    glm::vec4 _nextColor;
+    glm::vec3 _nextNormal;
+    uint32_t _vertexArrayId;
+    uint32_t _vertexBufferId;
+    GLenum _drawMode;
+    std::map<int, int> _faces;
 };
 
 #endif // GLCOLORNORMALPOSITIONVERTEX_H
